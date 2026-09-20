@@ -33,14 +33,18 @@ This implementation plan establishes the roadmap for transforming ResearchOS int
 
 ---
 
-### Milestone 3: Hybrid RAG + Evidence Store
-- **Objective**: Construct a zero-cost local hybrid retrieval system with verbatim evidence tracking.
-- **Components**:
-  - `backend/rag/dense.py`: Dense embedding generation with local `sentence-transformers` (`all-MiniLM-L6-v2`) and local `FAISS` index.
-  - `backend/rag/sparse.py`: Lexical BM25 indexing for exact keyword and symbol retrieval.
-  - `backend/rag/fusion.py`: Reciprocal Rank Fusion (RRF) combining dense and sparse search results.
-  - `backend/evidence/store.py`: Local SQLite evidence repository linking chunks directly to `Source` references, sections, and page coordinates.
-- **Verification**: Run multi-hop queries against ingested papers; confirm RRF precision and accurate evidence snippet provenance.
+### Milestone 3: Hybrid RAG + Evidence Store (COMPLETED)
+- [x] `backend/rag/embeddings.py`: Local 384-d dense embedding generation via `sentence-transformers` (`all-MiniLM-L6-v2`) with CUDA/CPU auto-detection, batching, and mock mode.
+- [x] `backend/rag/vector_store.py`: `FAISSVectorStore` backed by `IndexFlatIP` with disk persistence (`faiss.index` + `faiss_metadata.json`).
+- [x] `backend/rag/bm25.py`: `BM25Index` using `BM25Okapi` with specialized tokenization, academic stopword removal, and disk persistence (`bm25_metadata.json`).
+- [x] `backend/rag/hybrid.py`: Parameter-free Reciprocal Rank Fusion (RRF) with smoothing constant $k=60$.
+- [x] `backend/rag/reranker.py`: Local `CrossEncoder` reranker (`cross-encoder/ms-marco-MiniLM-L-6-v2`) scoring joint token cross-attention.
+- [x] `backend/rag/indexer.py`: `RAGIndexer` scanning `data/chunks/` with incremental caching and rebuild support.
+- [x] `backend/rag/pipeline.py`: `RAGPipeline` end-to-end coordinator capturing detailed runtime diagnostics.
+- [x] `backend/evidence/store.py`: `SQLiteEvidenceStore` with full lineage, chunk deduplication, upsert, and provenance metadata.
+- [x] `backend/api/v1/endpoints/rag.py`: REST endpoints `/api/v1/rag/index`, `/api/v1/rag/search`, `/api/v1/rag/stats`, `/api/v1/evidence`, `/api/v1/evidence/{evidence_id}`.
+- [x] `backend/rag/evaluation.py`: Automated IR benchmark suite on 20 gold documents and 16 benchmark queries (Recall@K, Precision@K, MRR, nDCG@K).
+- [x] 100% offline, deterministic pytest suite (83 passing tests).
 
 ---
 

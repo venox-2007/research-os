@@ -50,7 +50,7 @@ For complete architectural details, see [docs/architecture.md](docs/architecture
 
 - [x] **Milestone 1 — Engineering Foundation**: FastAPI backend factory, configuration, domain models, LLM provider abstraction with mock provider, developer tooling, React + Vite + TypeScript frontend, deterministic test suite.
 - [x] **Milestone 2 — Research Acquisition + Paper Ingestion**: Free arXiv API client, Semantic Scholar client with rate-limit backoff, streaming PDF downloader with magic-byte verification, PyMuPDF page-level extraction, structure-aware academic chunking, and local cache management.
-- [ ] **Milestone 3 — Hybrid RAG + Evidence Store**: Local `sentence-transformers` + FAISS dense search, BM25 sparse search, Reciprocal Rank Fusion, SQLite evidence store.
+- [x] **Milestone 3 — Hybrid RAG + Evidence Store**: Local `sentence-transformers` (`all-MiniLM-L6-v2`) + FAISS IndexFlatIP dense search, BM25Okapi sparse search, Reciprocal Rank Fusion (RRF, k=60), Cross-Encoder reranker (`ms-marco-MiniLM-L-6-v2`), SQLite evidence store with provenance tracking, and full IR evaluation benchmark suite.
 - [ ] **Milestone 4 — LangGraph Agent System**: Autonomous multi-agent coordination (Supervisor, Researcher, Experimenter, Critic).
 - [ ] **Milestone 5 — Experiment Engine**: Automated experiment script generation, sandboxed execution, metrics extraction.
 - [ ] **Milestone 6 — Critic + Citation Verification + Research Synthesis**: Claim-to-evidence entailment verification, citation generation, synthesis.
@@ -58,6 +58,7 @@ For complete architectural details, see [docs/architecture.md](docs/architecture
 - [ ] **Milestone 8 — Evaluation + Benchmarks + Final Documentation**: Standardized evaluation benchmarks and publication.
 
 For the full milestone roadmap, see [docs/implementation_plan.md](docs/implementation_plan.md).
+For detailed retrieval architecture and benchmark results, see [docs/rag.md](docs/rag.md).
 
 ---
 
@@ -92,8 +93,7 @@ npm run dev
 ```
 The frontend will be accessible at [http://localhost:5173](http://localhost:5173).
 
-### 4. Paper Search & Ingestion Testing (Milestone 2)
-With the backend running, search and ingest papers using the REST API:
+### 4. Paper Acquisition & Ingestion (Milestone 2)
 ```bash
 # Search arXiv papers (free, zero API keys required)
 curl "http://127.0.0.1:8000/api/v1/papers/search?query=transformer+scaling&provider=arxiv&limit=3"
@@ -107,13 +107,35 @@ curl -X POST "http://127.0.0.1:8000/api/v1/papers/ingest" \
 curl "http://127.0.0.1:8000/api/v1/papers/doc_1706.03762/chunks"
 ```
 
-### 5. Running Tests
+### 5. Hybrid RAG & Evidence Retrieval (Milestone 3)
+```bash
+# Index all cached chunks into FAISS vector store & BM25 keyword index
+curl -X POST "http://127.0.0.1:8000/api/v1/rag/index" \
+     -H "Content-Type: application/json" \
+     -d '{"rebuild": false}'
+
+# Execute hybrid search with Reciprocal Rank Fusion & Cross-Encoder reranking
+curl -X POST "http://127.0.0.1:8000/api/v1/rag/search" \
+     -H "Content-Type: application/json" \
+     -d '{"query": "multi-head attention mechanism", "top_k": 3}'
+
+# Retrieve recent verified evidence items with provenance coordinates
+curl "http://127.0.0.1:8000/api/v1/evidence?limit=10"
+```
+
+### 6. Retrieval Evaluation Benchmark
+Run the comprehensive evaluation benchmark across BM25, Dense, Hybrid (RRF), and Hybrid + Reranker:
+```bash
+python -m backend.rag.evaluation
+```
+
+### 7. Running Tests
 All tests are 100% offline, deterministic, and require no API keys:
 ```bash
 python -m pytest tests/ -v
 ```
 
-### 5. Linting & Formatting
+### 8. Linting & Formatting
 ```bash
 python -m ruff check backend tests
 python -m ruff format --check backend tests

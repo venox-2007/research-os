@@ -1,5 +1,36 @@
-"""Hybrid Retrieval-Augmented Generation (RAG) subsystem.
+"""Hybrid Retrieval-Augmented Generation (RAG) subsystem."""
 
-Planned for Milestone 3: Combines local dense embeddings (sentence-transformers + FAISS)
-and sparse keyword retrieval (BM25) with Reciprocal Rank Fusion (RRF) at ₹0 cost.
-"""
+from backend.rag.bm25 import BM25Index
+from backend.rag.embeddings import EmbeddingError, LocalEmbedder, get_embedder
+from backend.rag.hybrid import HybridRetriever
+from backend.rag.indexer import RAGIndexer
+from backend.rag.models import (
+    BM25SearchResult,
+    HybridCandidate,
+    RAGDiagnostics,
+    RAGQueryResult,
+    RerankedCandidate,
+    VectorSearchResult,
+)
+from backend.rag.pipeline import RAGPipeline
+from backend.rag.reranker import LocalReranker, get_reranker
+from backend.rag.vector_store import FAISSVectorStore
+
+__all__ = [
+    "BM25Index",
+    "BM25SearchResult",
+    "EmbeddingError",
+    "FAISSVectorStore",
+    "HybridCandidate",
+    "HybridRetriever",
+    "LocalEmbedder",
+    "LocalReranker",
+    "RAGDiagnostics",
+    "RAGIndexer",
+    "RAGPipeline",
+    "RAGQueryResult",
+    "RerankedCandidate",
+    "VectorSearchResult",
+    "get_embedder",
+    "get_reranker",
+]

@@ -7,7 +7,7 @@ safe, zero-cost defaults suitable for offline development and testing.
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -91,6 +91,44 @@ class Settings(BaseSettings):
         default=Path("./data/chunks"),
         description="Directory for structure-aware document chunks",
     )
+    indices_dir: Path = Field(
+        default=Path("./data/indices"),
+        description="Directory for local FAISS and BM25 index artifacts",
+    )
+    evidence_db_path: Path = Field(
+        default=Path("./data/evidence.db"),
+        description="SQLite database path for traceable evidence storage",
+    )
+
+    # RAG & Retrieval configuration (Milestone 3)
+    embedding_model: str = Field(
+        default="all-MiniLM-L6-v2",
+        description="Local sentence-transformers embedding model tag",
+    )
+    reranker_model: str = Field(
+        default="cross-encoder/ms-marco-MiniLM-L-6-v2",
+        description="Local cross-encoder reranker model tag",
+    )
+    embedding_batch_size: int = Field(
+        default=32,
+        description="Batch size for generating dense embeddings",
+    )
+    device: str = Field(
+        default="auto",
+        description="Compute device: auto, cpu, or cuda",
+    )
+    rrf_k: int = Field(
+        default=60,
+        description="Reciprocal Rank Fusion smoothing constant (k)",
+    )
+    top_k_retrieval: int = Field(
+        default=5,
+        description="Final number of top evidence chunks returned",
+    )
+    top_n_rerank: int = Field(
+        default=15,
+        description="Number of fused candidate chunks passed to cross-encoder reranker",
+    )
 
     @field_validator("log_level")
     @classmethod
@@ -112,6 +150,23 @@ class Settings(BaseSettings):
             raise ValueError(f"Invalid app_env '{value}'. Must be one of {valid_envs}")
         return normalized
 
+    @model_validator(mode="after")
+    def resolve_subdirectories(self) -> "Settings":
+        """Align subdirectories with data_dir if left at their defaults."""
+        default_data = Path("./data")
+        if self.data_dir != default_data:
+            if self.papers_dir == default_data / "papers":
+                self.papers_dir = self.data_dir / "papers"
+            if self.extracted_dir == default_data / "extracted":
+                self.extracted_dir = self.data_dir / "extracted"
+            if self.chunks_dir == default_data / "chunks":
+                self.chunks_dir = self.data_dir / "chunks"
+            if self.indices_dir == default_data / "indices":
+                self.indices_dir = self.data_dir / "indices"
+            if self.evidence_db_path == default_data / "evidence.db":
+                self.evidence_db_path = self.data_dir / "evidence.db"
+        return self
+
     def ensure_directories(self) -> None:
         """Ensure that required local directories exist on the filesystem."""
         self.data_dir.mkdir(parents=True, exist_ok=True)
@@ -120,6 +175,7 @@ class Settings(BaseSettings):
         self.papers_dir.mkdir(parents=True, exist_ok=True)
         self.extracted_dir.mkdir(parents=True, exist_ok=True)
         self.chunks_dir.mkdir(parents=True, exist_ok=True)
+        self.indices_dir.mkdir(parents=True, exist_ok=True)
 
 
 @lru_cache(maxsize=1)

@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
 from backend.core.app import create_app
-from backend.core.config import Settings
+from backend.core.config import Settings, get_settings
 from backend.llm.mock import MockLLMProvider
 
 
@@ -31,7 +31,9 @@ def test_settings(tmp_path: Path) -> Settings:
 @pytest.fixture
 def test_app(test_settings: Settings) -> FastAPI:
     """Create FastAPI application with test configuration."""
-    return create_app(test_settings)
+    app = create_app(test_settings)
+    app.dependency_overrides[get_settings] = lambda: test_settings
+    return app
 
 
 @pytest_asyncio.fixture

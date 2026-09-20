@@ -67,10 +67,15 @@ class Evidence(BaseModel):
     """Extracted snippet linked to a primary source with confidence and provenance."""
 
     id: UUID = Field(default_factory=uuid4, description="Unique evidence identifier")
-    source_id: UUID = Field(..., description="Foreign reference to the Source")
+    source_id: UUID | None = Field(
+        default_factory=uuid4, description="Foreign reference to the Source"
+    )
+    chunk_id: str | None = Field(default=None, description="Linked DocumentChunk ID")
+    source_title: str | None = Field(default=None, description="Title of parent Source")
     content: str = Field(..., min_length=1, description="Verbatim quote or relevant excerpt")
     section: str | None = Field(default=None, description="Source section (e.g. '3.2 Methodology')")
     page_number: int | None = Field(default=None, description="Page number where snippet occurs")
+    page_numbers: list[int] = Field(default_factory=list, description="List of page coordinates")
     confidence_score: float = Field(
         default=1.0,
         ge=0.0,
@@ -79,10 +84,27 @@ class Evidence(BaseModel):
     )
     extraction_method: str = Field(
         default="hybrid_rag",
-        description="Extraction method (dense_faiss, bm25, direct_parse)",
+        description="Extraction method (dense_faiss, bm25, hybrid_rrf)",
     )
     created_at: datetime = Field(default_factory=utc_now)
+    provenance_summary: str | None = Field(
+        default=None, description="Traceable provenance summary string"
+    )
     metadata: dict[str, Any] = Field(default_factory=dict)
+
+    def model_post_init(self, __context: Any) -> None:
+        if self.page_numbers and self.page_number is None:
+            self.page_number = self.page_numbers[0]
+        elif self.page_number is not None and not self.page_numbers:
+            self.page_numbers = [self.page_number]
+        if not self.provenance_summary:
+            page_str = f"Page {self.page_number}" if self.page_number is not None else "Page N/A"
+            sec_str = f"Section '{self.section}'" if self.section else "Section N/A"
+            chunk_str = f"Chunk {self.chunk_id}" if self.chunk_id else "Unchunked"
+            title_str = (
+                f"'{self.source_title}'" if self.source_title else f"Source {self.source_id}"
+            )
+            self.provenance_summary = f"{title_str} | {page_str} | {sec_str} | {chunk_str}"
 
 
 class Citation(BaseModel):

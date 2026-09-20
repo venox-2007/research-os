@@ -267,3 +267,78 @@ Implemented in Milestone 2, this subsystem provides an automated, zero-cost brid
    - `data/extracted/`: JSON-serialized `ParsedDocument` representations.
    - `data/chunks/`: JSON-serialized `DocumentChunk` arrays ready for batch embedding in Milestone 3.
    - All cached data is `.gitignore`d to prevent repository bloat while preserving folder structure via `.gitkeep`.
+
+---
+
+## 10. Hybrid RAG & Traceable Evidence Store (Milestone 3)
+
+Implemented in Milestone 3, this subsystem forms the high-precision retrieval backbone for ResearchOS, replacing naive vector search with a resilient multi-stage retrieval and ranking pipeline.
+
+```
+Research Query
+      │
+      ▼
+Query Normalization
+      │
+      ├──────────────────────────────┐
+      ▼                              ▼
+Dense Semantic Search          Sparse Lexical Search
+(FAISS IndexFlatIP, 384-d)    (BM25Okapi + Academic Stopwords)
+`all-MiniLM-L6-v2`            Keyword Saturation (k1=1.5, b=0.75)
+      │                              │
+      └──────────────┬───────────────┘
+                     ▼
+       Reciprocal Rank Fusion (RRF)
+       Score = Σ 1 / (60 + Rank_m)
+                     │
+                     ▼
+           Top Candidate Pool (top-N)
+                     │
+                     ▼
+        Cross-Encoder Reranker
+      (`ms-marco-MiniLM-L-6-v2`)
+        Full Joint Token Cross-Attention
+                     │
+                     ▼
+          Top-K Evidence Candidates
+                     │
+                     ▼
+         SQLite Evidence Repository
+         (`data/evidence.db`)
+      Source, Chunk, Section, Page Lineage
+```
+
+### Core Architecture Components:
+
+1. **Local Embeddings (`backend/rag/embeddings.py`)**:
+   - Uses `all-MiniLM-L6-v2` locally via `sentence-transformers` producing 384-dimensional dense vectors.
+   - Automatic GPU/CUDA hardware acceleration with graceful fallback to CPU.
+   - Normalizes all vectors to unit L2 norm, allowing dot product (`IndexFlatIP`) to calculate cosine similarity with optimal efficiency.
+   - Features deterministic offline mock mode for zero-latency testing.
+
+2. **Dense Vector Store (`backend/rag/vector_store.py`)**:
+   - Powered by in-memory `faiss.IndexFlatIP` persisted locally to `data/indices/faiss.index` and `data/indices/faiss_metadata.json`.
+   - Stores full chunk provenance: `chunk_id`, `document_id`, `source_id`, `start_page`, `end_page`, `section`, and chunk text.
+
+3. **Sparse BM25 Index (`backend/rag/bm25.py`)**:
+   - Implements Okapi BM25 (`rank-bm25`) with specialized tokenization that filters punctuation and academic stopwords.
+   - Excels at exact technical term queries, mathematical symbols, variable names, and author/venue searches where neural embeddings struggle.
+   - Persists tokenized corpus and metadata mapping to `data/indices/bm25_metadata.json`.
+
+4. **Reciprocal Rank Fusion (`backend/rag/hybrid.py`)**:
+   - Blends ranked results from dense semantic search and sparse lexical search using parameter-free Reciprocal Rank Fusion:
+     $$\text{RRF Score}(d) = \sum_{m \in M} \frac{1}{k + r_m(d)}$$
+   - Default smoothing constant $k = 60$. Overcomes score distribution divergence between unbounded BM25 scores and bounded cosine similarities.
+
+5. **Cross-Encoder Reranker (`backend/rag/reranker.py`)**:
+   - Employs `cross-encoder/ms-marco-MiniLM-L-6-v2` (22M params) to re-evaluate the fused candidate pool.
+   - Jointly scores `(query, passage)` pairs with full bi-directional self-attention across tokens, eliminating bi-encoder representation compression bottlenecks.
+
+6. **SQLite Evidence Store (`backend/evidence/store.py`)**:
+   - Manages an ACID-compliant in-process SQLite database (`data/evidence.db`).
+   - Stores verbatim extracts, start/end page coordinates, academic sections, source identifiers, confidence scores, and extraction metadata.
+   - Provides deduplication and upsert capabilities by chunk identifier.
+
+7. **IR Benchmark & Evaluation Suite (`backend/rag/evaluation.py`)**:
+   - Evaluates retrieval performance across a gold academic corpus of 20 documents and 16 diverse benchmark queries spanning exact keywords, semantic paraphrases, section-specific requests, and terminology variants.
+   - Calculates standard metrics: Recall@K, Precision@K, Mean Reciprocal Rank (MRR), and nDCG@K.
