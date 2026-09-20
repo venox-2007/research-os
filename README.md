@@ -49,7 +49,7 @@ For complete architectural details, see [docs/architecture.md](docs/architecture
 ## Milestone Roadmap
 
 - [x] **Milestone 1 — Engineering Foundation**: FastAPI backend factory, configuration, domain models, LLM provider abstraction with mock provider, developer tooling, React + Vite + TypeScript frontend, deterministic test suite.
-- [ ] **Milestone 2 — Research Acquisition + Paper Ingestion**: arXiv & Semantic Scholar integrations, PyMuPDF parsing, structure-aware chunking.
+- [x] **Milestone 2 — Research Acquisition + Paper Ingestion**: Free arXiv API client, Semantic Scholar client with rate-limit backoff, streaming PDF downloader with magic-byte verification, PyMuPDF page-level extraction, structure-aware academic chunking, and local cache management.
 - [ ] **Milestone 3 — Hybrid RAG + Evidence Store**: Local `sentence-transformers` + FAISS dense search, BM25 sparse search, Reciprocal Rank Fusion, SQLite evidence store.
 - [ ] **Milestone 4 — LangGraph Agent System**: Autonomous multi-agent coordination (Supervisor, Researcher, Experimenter, Critic).
 - [ ] **Milestone 5 — Experiment Engine**: Automated experiment script generation, sandboxed execution, metrics extraction.
@@ -92,7 +92,22 @@ npm run dev
 ```
 The frontend will be accessible at [http://localhost:5173](http://localhost:5173).
 
-### 4. Running Tests
+### 4. Paper Search & Ingestion Testing (Milestone 2)
+With the backend running, search and ingest papers using the REST API:
+```bash
+# Search arXiv papers (free, zero API keys required)
+curl "http://127.0.0.1:8000/api/v1/papers/search?query=transformer+scaling&provider=arxiv&limit=3"
+
+# Ingest an academic paper (download, parse, structure-chunk, and cache)
+curl -X POST "http://127.0.0.1:8000/api/v1/papers/ingest" \
+     -H "Content-Type: application/json" \
+     -d '{"url": "https://arxiv.org/pdf/1706.03762.pdf", "title": "Attention Is All You Need"}'
+
+# Retrieve structure-aware chunks for an ingested paper
+curl "http://127.0.0.1:8000/api/v1/papers/doc_1706.03762/chunks"
+```
+
+### 5. Running Tests
 All tests are 100% offline, deterministic, and require no API keys:
 ```bash
 python -m pytest tests/ -v

@@ -1,5 +1,34 @@
-"""Document and paper ingestion pipeline.
+"""Paper ingestion, parsing, chunking, and pipeline coordination package."""
 
-Planned for Milestone 2: PDF parsing via PyMuPDF / Docling, academic document
-chunking, section boundary detection, and metadata extraction.
-"""
+from backend.ingestion.chunker import StructureAwareChunker
+from backend.ingestion.models import DocumentChunk, IngestionResult, ParsedDocument, ParsedPage
+from backend.ingestion.pdf_downloader import (
+    InvalidPDFContentError,
+    PDFDownloader,
+    PDFDownloadError,
+    PDFSizeLimitExceededError,
+)
+from backend.ingestion.pdf_parser import (
+    CorruptPDFError,
+    EncryptedPDFError,
+    PDFParser,
+    PDFParserError,
+)
+from backend.ingestion.pipeline import IngestionPipeline
+
+__all__ = [
+    "CorruptPDFError",
+    "DocumentChunk",
+    "EncryptedPDFError",
+    "IngestionPipeline",
+    "IngestionResult",
+    "InvalidPDFContentError",
+    "PDFDownloader",
+    "PDFDownloadError",
+    "PDFParser",
+    "PDFParserError",
+    "PDFSizeLimitExceededError",
+    "ParsedDocument",
+    "ParsedPage",
+    "StructureAwareChunker",
+]

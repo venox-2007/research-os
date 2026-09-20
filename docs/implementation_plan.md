@@ -20,15 +20,16 @@ This implementation plan establishes the roadmap for transforming ResearchOS int
 
 ---
 
-### Milestone 2: Research Acquisition + Paper Ingestion
-- **Objective**: Automate discovery, acquisition, and parsing of academic literature without paid APIs.
-- **Components**:
-  - `backend/tools/arxiv.py`: arXiv API query engine with category, author, and date filtering.
-  - `backend/tools/semantic_scholar.py`: Free-tier Semantic Scholar client for citation graph exploration.
-  - `backend/ingestion/pdf_parser.py`: Local PDF extraction using `PyMuPDF` (fitz) and `Docling`.
-  - `backend/ingestion/chunker.py`: Structure-aware document chunking respecting sections, abstract, and bibliography.
-  - `backend/ingestion/metadata.py`: Automated BibTeX and publication metadata extraction.
-- **Verification**: Ingest 5 arXiv computer science papers locally, verify extracted section boundaries and parsed text.
+### Milestone 2: Research Acquisition + Paper Ingestion (COMPLETED)
+- [x] `backend/tools/arxiv.py`: Asynchronous arXiv API client parsing Atom XML into normalized `Source` objects.
+- [x] `backend/tools/semantic_scholar.py`: Semantic Scholar Academic Graph client with exponential backoff on HTTP 429 rate limits.
+- [x] `backend/core/models.py`: Unified `Source` domain model with standardized `pdf_url` property and provider metadata.
+- [x] `backend/ingestion/pdf_downloader.py`: Streaming PDF downloader with size limits (50MB threshold), magic bytes verification (`%PDF-`), and deterministic local disk caching.
+- [x] `backend/ingestion/pdf_parser.py`: PyMuPDF-based extractor preserving 1-indexed page boundaries, page text, and scanned/blank page markers.
+- [x] `backend/ingestion/chunker.py`: Structure-aware academic chunker identifying headings (Abstract, Introduction, Methodology, Experiments, Results, Discussion, Conclusion, References) with page coordinate tracking and fallback chunking.
+- [x] `backend/ingestion/pipeline.py`: IngestionPipeline coordinator uniting download, extraction, chunking, and local filesystem caching.
+- [x] `backend/api/v1/endpoints/papers.py`: REST endpoints `/api/v1/papers/search`, `/api/v1/papers/ingest`, and `/api/v1/papers/{doc_id}/chunks`.
+- [x] 100% offline, deterministic pytest suite (50 passing tests).
 
 ---
 

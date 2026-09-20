@@ -71,8 +71,10 @@ yarn-error.log*
 pnpm-debug.log*
 
 # Application data & experiments (keep directory structure)
-data/*
-!data/.gitkeep
+data/**
+!data/
+!data/**/
+!data/**/.gitkeep
 !data/sample/
 
 # Local databases & logs

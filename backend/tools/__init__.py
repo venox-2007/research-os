@@ -1,5 +1,20 @@
-"""Agent tool registry and integrations for external academic APIs.
+"""Academic paper discovery tools and API clients."""
 
-Planned for Milestone 2: Free academic accessors for arXiv, Semantic Scholar,
-and zero-cost web search/retrieval tools.
-"""
+from backend.tools.arxiv import ArxivAPIError, ArxivClient, ArxivError, ArxivParseError
+from backend.tools.semantic_scholar import (
+    SemanticScholarAPIError,
+    SemanticScholarClient,
+    SemanticScholarError,
+    SemanticScholarRateLimitError,
+)
+
+__all__ = [
+    "ArxivAPIError",
+    "ArxivClient",
+    "ArxivError",
+    "ArxivParseError",
+    "SemanticScholarAPIError",
+    "SemanticScholarClient",
+    "SemanticScholarError",
+    "SemanticScholarRateLimitError",
+]

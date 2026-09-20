@@ -57,6 +57,20 @@ class Settings(BaseSettings):
         default=None,
         description="Optional Gemini API key for free-tier usage",
     )
+    semantic_scholar_api_key: str | None = Field(
+        default=None,
+        description="Optional Semantic Scholar API key for higher rate limits",
+    )
+
+    # Ingestion & network limits
+    max_pdf_size_bytes: int = Field(
+        default=50 * 1024 * 1024,
+        description="Maximum allowed PDF download size (bytes). Default 50MB",
+    )
+    request_timeout_seconds: float = Field(
+        default=30.0,
+        description="Network request timeout in seconds",
+    )
 
     # Local storage paths (all kept local, zero-cost)
     data_dir: Path = Field(default=Path("./data"), description="Base local data storage")
@@ -64,6 +78,18 @@ class Settings(BaseSettings):
     experiments_dir: Path = Field(
         default=Path("./data/experiments"),
         description="Directory for local experiment sandboxes",
+    )
+    papers_dir: Path = Field(
+        default=Path("./data/papers"),
+        description="Directory for downloaded raw PDF papers",
+    )
+    extracted_dir: Path = Field(
+        default=Path("./data/extracted"),
+        description="Directory for extracted structured paper documents",
+    )
+    chunks_dir: Path = Field(
+        default=Path("./data/chunks"),
+        description="Directory for structure-aware document chunks",
     )
 
     @field_validator("log_level")
@@ -91,6 +117,9 @@ class Settings(BaseSettings):
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.experiments_dir.mkdir(parents=True, exist_ok=True)
+        self.papers_dir.mkdir(parents=True, exist_ok=True)
+        self.extracted_dir.mkdir(parents=True, exist_ok=True)
+        self.chunks_dir.mkdir(parents=True, exist_ok=True)
 
 
 @lru_cache(maxsize=1)

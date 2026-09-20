@@ -53,6 +53,15 @@ class Source(BaseModel):
     bibtex: str | None = Field(default=None, description="BibTeX entry for reference")
     metadata: dict[str, Any] = Field(default_factory=dict)
 
+    @property
+    def pdf_url(self) -> str | None:
+        """Return the direct PDF download URL if known."""
+        if self.metadata and self.metadata.get("pdf_url"):
+            return str(self.metadata["pdf_url"])
+        if self.url and (self.url.endswith(".pdf") or "/pdf/" in self.url):
+            return self.url
+        return None
+
 
 class Evidence(BaseModel):
     """Extracted snippet linked to a primary source with confidence and provenance."""

@@ -196,3 +196,74 @@ For empirical computational research (e.g. algorithm benchmarking, data analysis
 2. **Telemetry Capture**: Real-time streaming of stdout/stderr and exit code monitoring.
 3. **Metric Extraction**: Automated JSON/regex extraction of numerical metrics into the `Experiment.metrics` key-value store.
 4. **Artifact Archival**: Generated figures (PNG, SVG) and output datasets (CSV, JSON) are linked to the parent `ResearchQuestion`.
+
+---
+
+## 9. Research Acquisition & Paper Ingestion Pipeline (Milestone 2)
+
+Implemented in Milestone 2, this subsystem provides an automated, zero-cost bridge between academic repositories and structured text ready for RAG indexing.
+
+```
+[arXiv API / Semantic Scholar API]
+                │
+                ▼
+       [Source Normalization]
+  (title, authors, year, pdf_url, IDs)
+                │
+                ▼
+       [PDF Downloader]
+  (streaming, size guard, %PDF- magic bytes)
+                │
+                ▼
+     [data/papers/*.pdf]
+                │
+                ▼
+       [PyMuPDF PDF Parser]
+  (page-level text, scanned/blank detection)
+                │
+                ▼
+    [data/extracted/*.json]
+                │
+                ▼
+   [Structure-Aware Chunker]
+  (academic sections, page coordinate tracking)
+                │
+                ▼
+     [data/chunks/*.json]
+                │
+                ▼
+     (Ready for M3 Hybrid RAG)
+```
+
+### Core Components & Flow:
+
+1. **Academic Discovery Clients**:
+   - **`ArxivClient` (`backend/tools/arxiv.py`)**: Queries arXiv's public export API (`https://export.arxiv.org/api/query`), parsing Atom XML into strongly typed domain `Source` objects without web scraping or API keys.
+   - **`SemanticScholarClient` (`backend/tools/semantic_scholar.py`)**: Searches the free Academic Graph API, retrieving citation counts, DOIs, venues, and open-access PDF links, equipped with exponential backoff for HTTP 429 rate limits.
+
+2. **Unified Source Normalization**:
+   - The `Source` model (`backend/core/models.py`) acts as the single canonical representation for papers from arXiv, Semantic Scholar, web links, or local PDFs. Provider-specific identifiers (`arxiv_id`, `doi`, `venue`, `citation_count`) are preserved in metadata while standardizing `pdf_url` access.
+
+3. **Streaming PDF Downloader (`backend/ingestion/pdf_downloader.py`)**:
+   - Streams PDF binaries in 64KB chunks to prevent high memory usage.
+   - Enforces strict file size thresholds (`max_pdf_size_bytes`, default 50MB).
+   - Validates magic bytes (`%PDF-`) before persisting to prevent HTML error pages from being treated as PDFs.
+   - Employs deterministic file naming (`paper_<hash>.pdf` or `<arxiv_id>.pdf`) to deduplicate downloads.
+
+4. **Page-Bounded PDF Extraction (`backend/ingestion/pdf_parser.py`)**:
+   - Utilizes PyMuPDF (`pymupdf`) to extract text while maintaining strict 1-indexed page boundaries.
+   - Categorizes pages: normal text, blank pages, and scanned/image-only pages.
+   - Generates structured `ParsedDocument` containing ordered `ParsedPage` objects rather than a monolithic text dump.
+
+5. **Structure-Aware Academic Chunking (`backend/ingestion/chunker.py`)**:
+   - Identifies academic sections (Abstract, Introduction, Related Work, Methodology, Experiments, Results, Discussion, Conclusion, References) via header heuristics.
+   - Preserves short sections (such as Abstract) as self-contained semantic units.
+   - Subdivides longer sections using target character windows (~2,000 chars / ~500 tokens) with configurable sentence overlap.
+   - Retains provenance coordinates on every chunk (`start_page`, `end_page`, `section`, `source_id`, `document_id`) to enable exact citation attribution.
+   - Falls back gracefully to sliding-window chunking for unstructured documents.
+
+6. **Local Filesystem Cache (`data/`)**:
+   - `data/papers/`: Raw verified PDF files.
+   - `data/extracted/`: JSON-serialized `ParsedDocument` representations.
+   - `data/chunks/`: JSON-serialized `DocumentChunk` arrays ready for batch embedding in Milestone 3.
+   - All cached data is `.gitignore`d to prevent repository bloat while preserving folder structure via `.gitkeep`.
