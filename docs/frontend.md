@@ -1,103 +1,85 @@
-# ResearchOS Frontend Dashboard (Milestone 7)
+# ResearchOS Frontend Dashboard (Milestone 7 UX Redesign)
 
-The **ResearchOS Frontend Dashboard** is a high-density, demo-ready web application built to visually showcase all capabilities of the autonomous AI research engineer. It connects directly to the FastAPI backend while adhering strictly to the **₹0 cost** constraint — requiring zero paid UI libraries, zero paid charting dependencies, and zero paid cloud hosting.
-
----
-
-## 1. Technology Stack
-
-- **Framework**: React 18 + TypeScript
-- **Bundler & Tooling**: Vite 5
-- **Styling**: Tailwind CSS 3 (Dark/Light mode support, high-density academic UI)
-- **Testing**: Vitest 1.6
-- **Visualizations**: Pure native SVG bar charts (`MetricsChart.tsx`) — 0 bundle bloat, 0 runtime charting overhead.
-- **Cost**: **₹0.00 / $0.00**
+The **ResearchOS Frontend Dashboard** is a clean, modern, publication-ready research interface engineered to make autonomous academic research immediately intuitive. It connects directly to the FastAPI backend while adhering strictly to the **₹0 cost** constraint — requiring zero paid UI libraries, zero paid charting dependencies, and zero paid cloud hosting.
 
 ---
 
-## 2. Core Architectural Views
+## 1. Design Philosophy: Simplicity First
 
-The dashboard is structured into 7 primary operational consoles accessible via the sidebar:
+The core interaction flow is simplified to three clear stages:
+$$\text{ENTER QUESTION} \longrightarrow \text{RESEARCHOS VISIBLY RESEARCHES} \longrightarrow \text{FINAL RESEARCH RESULT}$$
 
-### 1. Research Workspace (`WorkspacePage.tsx`)
-- **Objective Input**: Allows submitting research queries, specifying academic disciplines, and configuring maximum agent iterations (1–5).
-- **Curated Benchmarks**: Quick-load buttons for standardized academic queries (e.g. *Dense vs Hybrid RAG Retrieval*, *Citation Grounding*).
-- **Autonomous Research Lifecycle (`StageProgress.tsx`)**: Live visual tracker highlighting progression across the 8 deterministic stages:
-  1. *Question Formulation*
-  2. *Planning*
-  3. *Research*
-  4. *Evidence Audit*
-  5. *Experiments*
-  6. *Synthesis*
-  7. *Citation Audit*
-  8. *Final Report*
-- **Active Run Telemetry**: Real-time counter of iterations, tasks completed, evidence chunks retrieved, and agent confidence scores.
-
-### 2. Research Runs & Telemetry (`RunsPage.tsx`)
-- **Execution Timeline**: Step-by-step trace stream recording LangGraph node executions (`planner`, `researcher`, `verifier`, `critic`, `experimenter`, `synthesizer`, `citation_validator`).
-- **State Decomposition**: Full inspection of sub-task objectives, assigned agents, and task completion statuses.
-- **Event Inspection**: Clickable trace cards showing exact execution timestamps, iteration rounds, and payload details.
-
-### 3. Evidence Explorer & Grounding DAG (`EvidencePage.tsx`)
-- **Chunk Explorer**: Searchable and filterable grid of all retrieved evidence snippets.
-- **Filtering**: By extraction method (`pdf_section_chunk`, `pdf_table_extract`, `arxiv_abstract_ingest`, `hybrid_rag_dense`) and confidence thresholds.
-- **Interactive Provenance Inspection (`ClaimModal.tsx`)**: Clicking any claim or evidence opens an interactive modal revealing the multi-hop provenance DAG:
-  $$\text{Claim} \longrightarrow \text{Evidence Chunk} \longrightarrow \text{Primary Source} \longrightarrow \text{Page \& Section Coordinates}$$
-
-### 4. Literature & Paper Acquisition (`SourcesPage.tsx`)
-- **arXiv Search**: Direct discovery of open-access preprints using the free arXiv API.
-- **Paper Cards**: Displays title, author roster, publication date, categories, expandable abstract, and direct PDF download links.
-- **Ingestion**: Allows one-click ingestion into the local RAG corpus.
-
-### 5. Experiment Engine (`ExperimentsPage.tsx`)
-- **Benchmark Catalog**: Pre-configured sandboxed routines (`ranking_evaluation`, `chunking_benchmark`, `retrieval_comparison`).
-- **Safe Execution**: Trigger parameter-controlled benchmark runs isolated within local execution constraints (10s timeout, zero external egress).
-- **Empirical Metrics**: Visualizes MRR, NDCG@10, Recall@20, and Latency via pure SVG charts with side-by-side metric cards.
-- **Artifact Export**: One-click JSON download of experiment configurations, metrics, and logs.
-
-### 6. Research Synthesis & Quality Audit (`ReportsPage.tsx`)
-- **Publication Reader**: Multi-tab viewer offering *Rendered Report*, *Raw Markdown*, and *Citations & Provenance*.
-- **Quality Control Audit Panel**: Real-time evaluation of:
-  - Provenance Completeness (%)
-  - Citation Correctness (%)
-  - Unsupported Claim Rate (strictly flagged if > 0)
-  - Contradiction Count
-- **Export**: Full report export as standard GitHub-flavored Markdown (`.md`) or machine-readable JSON (`.json`).
-
-### 7. System Architecture (`ArchitecturePage.tsx`)
-- **End-to-End Diagram**: Comprehensive visual breakdown of the 8-stage deterministic pipeline.
-- **Cost Audit Table**: Verification of every technology layer proving operational expenses are ₹0.00.
+All deep engineering telemetry (LangGraph internal node names, chunk IDs, raw parameters, timings) is preserved but cleanly placed behind a reusable **`TechnicalDetails`** disclosure (`Technical details ▾`). First-time visitors experience an elegant, academic research tool rather than an admin dashboard.
 
 ---
 
-## 3. Offline Demo Mode
+## 2. Primary Navigation
 
-To allow complete exploration without running backend server processes or downloading local Ollama weights, the dashboard features a built-in **Deterministic Offline Demo Mode**:
-- Toggled via the top navigation bar (`Demo Mode: ON / OFF`).
-- Backed by a curated synthetic academic benchmark in `mockData.ts` (*Vaswani et al.*, *Robertson & Zaragoza*, *Karpukhin et al.*).
-- Completely isolated: Zero mock data is displayed when Demo Mode is off and connected to a live backend.
+The primary sidebar is streamlined to 6 primary operational items:
+- **Research**: The main landing, execution, and result console.
+- **My Research**: Historical record of previous research investigations.
+- **Sources**: Clean academic literature cards with arXiv links and PDF access.
+- **Evidence**: Grounded claims cross-referenced with exact page/section coordinates.
+- **Experiments**: Plain-English hypotheses, benchmark routines, and empirical results.
+- **Reports**: Publication-grade reader with interactive citation lineages.
+
+*System Architecture and specifications remain accessible under a secondary **System Details** footer link.*
 
 ---
 
-## 4. Running the Frontend
+## 3. Core Screen Progression
 
-### Development Server
+### 1. Research Home
+- **Hero**: *"Research anything."*
+- **Description**: *"ResearchOS searches academic literature, verifies evidence, runs experiments when useful, and builds a cited research report."*
+- **Main Input**: Prompt textarea with suggested benchmark questions:
+  - *"How does hybrid retrieval improve RAG?"*
+  - *"Compare CNN and Transformer speech enhancement."*
+  - *"What factors affect retrieval quality?"*
+- **Advanced Options**: Collapsible drawer for academic discipline and iteration depth.
+
+### 2. Researching Screen (Active Execution)
+- **Title**: *"Researching your question..."*
+- **Human-Readable Progression**:
+  - ✓ Understanding the question
+  - ✓ Searching academic literature
+  - ● Analyzing evidence
+  - ○ Running experiments
+  - ○ Writing the report
+  - ○ Checking citations
+- **Live Statistics**: Dynamic counter (e.g. *12 sources · 38 evidence items · 2 experiments*).
+- **Technical Details ▾**: Expandable view of node execution logs, iteration counts, and timings.
+
+### 3. Research Complete Screen (Results)
+- **Completion Banner**: *✓ Research complete*
+- **Executive Summary**: Synthesized high-level answer to the research objective.
+- **Audited Metrics**:
+  - Citation coverage: **100%**
+  - Unsupported claims: **0**
+  - Provenance: **100%**
+- **Action Buttons**: *"Read Full Report →"* and *"Explore Evidence"*.
+
+### 4. Publication Report View
+- Clean research paper styling (Abstract, Introduction, Background, Findings, Discussion, Limitations, References).
+- Generous whitespace and serif typography.
+- Clickable citation references opening an interactive side drawer showing the complete lineage:
+  $$\text{Claim} \longrightarrow \text{Evidence Excerpt} \longrightarrow \text{Primary Paper} \longrightarrow \text{Page \& Section Coordinates}$$
+
+---
+
+## 4. Offline Demo Mode
+
+- Toggled via the top bar: `Demo Mode: ON / OFF`.
+- When active, a clear banner informs the user: *"Using synthetic demo data — no live research performed."*
+- Powered by a synthetic benchmark dataset in `mockData.ts` (*Vaswani et al.*, *Robertson & Zaragoza*, *Karpukhin et al.*).
+
+---
+
+## 5. Running the Frontend
+
 ```bash
 cd frontend
-npm.cmd run dev
+npm.cmd run dev       # Development server at http://localhost:5173
+npm.cmd test          # Run Vitest test suite (24 passing tests)
+npm.cmd run build     # Production compilation (< 1s)
 ```
-The dashboard runs at `http://localhost:5173` and proxies backend requests to `http://127.0.0.1:8000`.
-
-### Running Tests
-```bash
-cd frontend
-npm.cmd test
-```
-Executes 25 comprehensive Vitest tests verifying mock data integrity, API client simulation, UI component server rendering, and page views.
-
-### Production Build
-```bash
-cd frontend
-npm.cmd run build
-```
-Compiles TypeScript and bundles production assets into `frontend/dist/` in under 1 second.

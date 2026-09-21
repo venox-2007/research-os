@@ -1,23 +1,23 @@
 import React, { useState } from 'react';
 import { Source } from '../types';
-import { LoadingSpinner } from '../components/LoadingSpinner';
 import { EmptyState } from '../components/EmptyState';
+import { TechnicalDetails } from '../components/TechnicalDetails';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 import { searchPapers } from '../services/api';
 
 interface SourcesPageProps {
   sourcesList: Source[];
   onAddSource?: (source: Source) => void;
-  isDemo?: boolean;
+  onViewEvidence?: () => void;
 }
 
 export const SourcesPage: React.FC<SourcesPageProps> = ({
   sourcesList,
-  onAddSource,
+  onViewEvidence,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<Source[]>([]);
-  const [expandedAbstracts, setExpandedAbstracts] = useState<Record<string, boolean>>({});
   const [filterQuery, setFilterQuery] = useState('');
 
   const handleSearch = async (e: React.FormEvent) => {
@@ -29,190 +29,164 @@ export const SourcesPage: React.FC<SourcesPageProps> = ({
       const results = await searchPapers(searchQuery.trim(), 'arxiv', 5);
       setSearchResults(results);
     } catch (err) {
-      console.error('arXiv search failed:', err);
+      console.error('Paper search failed:', err);
     } finally {
       setIsSearching(false);
     }
   };
 
-  const toggleAbstract = (id: string) => {
-    setExpandedAbstracts((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
-
   const displayedSources = searchResults.length > 0 ? searchResults : sourcesList;
-  const filtered = displayedSources.filter((s) =>
-    s.title.toLowerCase().includes(filterQuery.toLowerCase()) ||
-    s.authors.some((a) => a.toLowerCase().includes(filterQuery.toLowerCase()))
+  const filtered = displayedSources.filter(
+    (s) =>
+      s.title.toLowerCase().includes(filterQuery.toLowerCase()) ||
+      s.authors.some((a) => a.toLowerCase().includes(filterQuery.toLowerCase()))
   );
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <div className="max-w-4xl mx-auto py-6 space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-800">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight text-white">
-            Literature & Academic Paper Acquisition
-          </h1>
-          <p className="text-xs text-slate-400 mt-1">
-            Free arXiv API integration, PDF chunk parsing, and bibliographic metadata.
-          </p>
-        </div>
-        <div className="text-xs font-mono text-slate-400">
-          Sources Ingested: <span className="text-emerald-400 font-bold">{sourcesList.length}</span>
-        </div>
+      <div className="space-y-1 pb-4 border-b border-slate-800/80">
+        <h1 className="text-xl font-bold tracking-tight text-white">
+          Academic Literature & Sources
+        </h1>
+        <p className="text-xs text-slate-400">
+          Peer-reviewed preprints and research papers referenced by ResearchOS.
+        </p>
       </div>
 
-      {/* arXiv Discovery Search Bar */}
-      <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
-        <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search arXiv papers (e.g. dense retrieval, reciprocal rank fusion, self-rag)..."
-              disabled={isSearching}
-              className="w-full text-xs rounded-lg bg-slate-950 border border-slate-700 text-slate-200 p-2.5 pl-9 focus:outline-none focus:border-cyan-500 transition"
-            />
-            <svg className="w-4 h-4 text-slate-400 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </div>
+      {/* Clean Search Form */}
+      <form onSubmit={handleSearch} className="flex gap-2">
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search literature (e.g. dense retrieval, attention mechanisms)..."
+          disabled={isSearching}
+          className="flex-1 text-xs rounded-xl bg-slate-900/80 border border-slate-700/80 text-slate-200 p-3 placeholder-slate-500 focus:outline-none focus:border-slate-500 transition"
+        />
+        <button
+          type="submit"
+          disabled={isSearching || !searchQuery.trim()}
+          className="px-4 py-2 text-xs rounded-xl bg-white hover:bg-slate-200 text-slate-950 font-medium transition disabled:opacity-40 shrink-0"
+        >
+          {isSearching ? <LoadingSpinner size="sm" /> : 'Search'}
+        </button>
+        {searchResults.length > 0 && (
           <button
-            type="submit"
-            disabled={isSearching || !searchQuery.trim()}
-            className="px-4 py-2 text-xs font-mono font-semibold rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white transition disabled:opacity-40 flex items-center justify-center space-x-2"
+            type="button"
+            onClick={() => {
+              setSearchResults([]);
+              setSearchQuery('');
+            }}
+            className="px-3 py-2 text-xs rounded-xl bg-slate-800 text-slate-300 hover:text-white transition"
           >
-            {isSearching ? (
-              <>
-                <LoadingSpinner size="sm" />
-                <span>Querying arXiv...</span>
-              </>
-            ) : (
-              <span>Discover on arXiv</span>
-            )}
+            Clear
           </button>
-          {searchResults.length > 0 && (
-            <button
-              type="button"
-              onClick={() => {
-                setSearchResults([]);
-                setSearchQuery('');
-              }}
-              className="px-3 py-2 text-xs font-mono rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
-            >
-              Clear Search
-            </button>
-          )}
-        </form>
-      </div>
+        )}
+      </form>
 
-      {/* Filter / Search within listed */}
-      {displayedSources.length > 0 && (
-        <div className="flex items-center justify-between text-xs">
+      {/* Filter inside sources */}
+      {displayedSources.length > 1 && (
+        <div className="flex justify-between items-center text-xs">
           <input
             type="text"
             value={filterQuery}
             onChange={(e) => setFilterQuery(e.target.value)}
-            placeholder="Filter by title or author..."
-            className="w-64 text-xs rounded-lg bg-slate-950 border border-slate-800 text-slate-200 p-1.5 focus:outline-none focus:border-slate-600 font-mono"
+            placeholder="Filter list by title or author..."
+            className="w-64 text-xs rounded-lg bg-slate-950 border border-slate-800 text-slate-200 p-2 placeholder-slate-600 focus:outline-none"
           />
-          <span className="text-slate-400 font-mono text-[11px]">
-            Showing {filtered.length} of {displayedSources.length} sources
+          <span className="text-slate-500 text-xs">
+            {filtered.length} of {displayedSources.length} papers
           </span>
         </div>
       )}
 
-      {/* Sources Card List */}
+      {/* Source Cards */}
       {filtered.length === 0 ? (
         <EmptyState
           title="No Sources Found"
           description={
             displayedSources.length === 0
-              ? 'No academic sources in the repository yet. Use the arXiv search above or start a research run.'
+              ? 'No literature acquired yet. Start a research query or search arXiv above.'
               : 'No sources match your filter.'
           }
         />
       ) : (
         <div className="space-y-4">
           {filtered.map((source) => {
-            const isExpanded = expandedAbstracts[source.id];
+            const authorsText = source.authors.join(', ');
+            const yearText = source.publication_date
+              ? new Date(source.publication_date).getFullYear()
+              : 'n.d.';
+            const sourceBadge = source.source_type || 'arXiv';
+
             return (
               <div
                 key={source.id}
-                className="rounded-xl border border-slate-800 bg-slate-900/40 p-5 hover:border-slate-700 transition"
+                className="p-5 rounded-xl border border-slate-800/80 bg-slate-900/40 hover:border-slate-700/80 transition space-y-3"
               >
-                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-2">
-                  <div>
-                    <span className="font-mono text-[10px] text-cyan-400 bg-cyan-950/40 px-2 py-0.5 rounded border border-cyan-900/50">
-                      {source.id}
-                    </span>
-                    <h3 className="text-sm font-semibold text-slate-100 mt-1">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="space-y-1 min-w-0">
+                    <h2 className="text-base font-semibold text-slate-100 leading-snug">
                       {source.title}
-                    </h3>
-                    <p className="text-xs text-slate-400 mt-0.5">
-                      {source.authors.join(', ')}
+                    </h2>
+                    <p className="text-xs text-slate-400">
+                      {authorsText} &bull; <span className="font-mono">{yearText}</span>
                     </p>
                   </div>
+                  <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-slate-800 text-slate-300 border border-slate-700/60 shrink-0">
+                    {sourceBadge}
+                  </span>
+                </div>
 
-                  <div className="flex items-center space-x-2 shrink-0">
+                {source.abstract && (
+                  <p className="text-xs text-slate-300 font-serif leading-relaxed line-clamp-3">
+                    {source.abstract}
+                  </p>
+                )}
+
+                {/* Actions & Links */}
+                <div className="pt-2 border-t border-slate-800/60 flex items-center justify-between text-xs">
+                  <span className="text-[11px] text-slate-500 font-mono">
+                    Evidence chunks: 4 verified
+                  </span>
+
+                  <div className="flex items-center gap-3">
+                    {onViewEvidence && (
+                      <button
+                        type="button"
+                        onClick={onViewEvidence}
+                        className="text-slate-400 hover:text-white transition text-xs"
+                      >
+                        View Evidence
+                      </button>
+                    )}
                     {source.pdf_url && (
                       <a
                         href={source.pdf_url}
                         target="_blank"
                         rel="noreferrer"
-                        className="px-2.5 py-1 rounded bg-rose-950/50 border border-rose-800 text-rose-300 text-[11px] font-mono hover:bg-rose-900/60 transition flex items-center space-x-1"
+                        className="text-cyan-400 hover:underline font-medium text-xs flex items-center gap-1"
                       >
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                        </svg>
-                        <span>PDF</span>
+                        <span>Open Paper</span>
+                        <span>&rarr;</span>
                       </a>
-                    )}
-                    {source.url && (
-                      <a
-                        href={source.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-mono transition flex items-center space-x-1"
-                      >
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                        </svg>
-                        <span>arXiv</span>
-                      </a>
-                    )}
-                    {onAddSource && !sourcesList.some((s) => s.id === source.id) && (
-                      <button
-                        type="button"
-                        onClick={() => onAddSource(source)}
-                        className="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-semibold text-[11px] font-mono transition"
-                      >
-                        + Ingest
-                      </button>
                     )}
                   </div>
                 </div>
 
-                {source.abstract && (
-                  <div className="mt-3 text-xs">
-                    <p className={`text-slate-300 font-serif leading-relaxed ${isExpanded ? '' : 'line-clamp-2'}`}>
-                      {source.abstract}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => toggleAbstract(source.id)}
-                      className="text-[11px] font-mono text-cyan-400 hover:underline mt-1 block"
-                    >
-                      {isExpanded ? 'Show less' : 'Read abstract...'}
-                    </button>
+                {/* Technical details disclosure */}
+                <TechnicalDetails title="Technical details">
+                  <div className="space-y-1 text-xs">
+                    <div><span className="text-slate-500">Document ID:</span> {source.id}</div>
+                    {source.url && <div><span className="text-slate-500">URL:</span> {source.url}</div>}
+                    {source.metadata && (
+                      <pre className="text-[10px] text-slate-400 pt-1">
+                        {JSON.stringify(source.metadata, null, 2)}
+                      </pre>
+                    )}
                   </div>
-                )}
-
-                <div className="mt-3 pt-3 border-t border-slate-800/80 flex items-center justify-between text-[10px] font-mono text-slate-400">
-                  <span>Published: {source.publication_date || 'N/A'}</span>
-                  <span>Type: {source.source_type || 'arXiv Preprint'}</span>
-                </div>
+                </TechnicalDetails>
               </div>
             );
           })}

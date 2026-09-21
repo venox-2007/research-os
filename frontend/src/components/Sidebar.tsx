@@ -1,13 +1,13 @@
 import React from 'react';
 
 export type DashboardView =
-  | 'workspace'
-  | 'runs'
-  | 'evidence'
+  | 'research'
+  | 'my-research'
   | 'sources'
+  | 'evidence'
   | 'experiments'
   | 'reports'
-  | 'architecture';
+  | 'system-details';
 
 interface SidebarProps {
   activeView: DashboardView;
@@ -15,6 +15,7 @@ interface SidebarProps {
   evidenceCount?: number;
   sourcesCount?: number;
   experimentsCount?: number;
+  savedRunsCount?: number;
 }
 
 interface NavItem {
@@ -22,7 +23,6 @@ interface NavItem {
   label: string;
   icon: React.ReactNode;
   badge?: number;
-  description: string;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -31,43 +31,31 @@ export const Sidebar: React.FC<SidebarProps> = ({
   evidenceCount = 0,
   sourcesCount = 0,
   experimentsCount = 0,
+  savedRunsCount = 0,
 }) => {
-  const navItems: NavItem[] = [
+  const mainNavItems: NavItem[] = [
     {
-      id: 'workspace',
-      label: 'Workspace',
-      description: 'Research question input & stage pipeline',
+      id: 'research',
+      label: 'Research',
       icon: (
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
       ),
     },
     {
-      id: 'runs',
-      label: 'Research Runs',
-      description: 'Execution timeline & agent node traces',
+      id: 'my-research',
+      label: 'My Research',
+      badge: savedRunsCount > 0 ? savedRunsCount : undefined,
       icon: (
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-        </svg>
-      ),
-    },
-    {
-      id: 'evidence',
-      label: 'Evidence Explorer',
-      description: 'Grounding chunks & claim verification DAG',
-      badge: evidenceCount > 0 ? evidenceCount : undefined,
-      icon: (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       ),
     },
     {
       id: 'sources',
-      label: 'Literature / Sources',
-      description: 'arXiv papers, web discovery & ingested PDFs',
+      label: 'Sources',
       badge: sourcesCount > 0 ? sourcesCount : undefined,
       icon: (
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -76,67 +64,61 @@ export const Sidebar: React.FC<SidebarProps> = ({
       ),
     },
     {
+      id: 'evidence',
+      label: 'Evidence',
+      badge: evidenceCount > 0 ? evidenceCount : undefined,
+      icon: (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      ),
+    },
+    {
       id: 'experiments',
-      label: 'Experiment Engine',
-      description: 'Sandboxed code, executions & metrics',
+      label: 'Experiments',
       badge: experimentsCount > 0 ? experimentsCount : undefined,
       icon: (
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
         </svg>
       ),
     },
     {
       id: 'reports',
-      label: 'Research Reports',
-      description: 'Evidence-backed synthesis & citations',
+      label: 'Reports',
       icon: (
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-      ),
-    },
-    {
-      id: 'architecture',
-      label: 'System Architecture',
-      description: 'LangGraph, hybrid RAG & local stack',
-      icon: (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
       ),
     },
   ];
 
   return (
-    <aside className="w-64 border-r border-slate-800 bg-slate-950/60 p-3 flex flex-col justify-between shrink-0 select-none">
+    <aside className="w-56 border-r border-slate-800/80 bg-slate-950/70 p-3 flex flex-col justify-between shrink-0 select-none">
       <div>
-        <div className="px-3 py-2 text-[11px] font-mono uppercase tracking-wider text-slate-400 font-semibold">
-          Autonomous Console
-        </div>
-        <nav className="space-y-1 mt-1">
-          {navItems.map((item) => {
+        <nav className="space-y-1">
+          {mainNavItems.map((item) => {
             const isActive = activeView === item.id;
             return (
               <button
                 key={item.id}
                 type="button"
                 onClick={() => onSelectView(item.id)}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition text-left group ${
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition text-left group font-medium ${
                   isActive
-                    ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 font-medium'
-                    : 'text-slate-300 hover:bg-slate-900/80 hover:text-slate-100 border border-transparent'
+                    ? 'bg-slate-800 text-white font-semibold'
+                    : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'
                 }`}
-                title={item.description}
               >
                 <div className="flex items-center space-x-2.5 truncate">
-                  <span className={isActive ? 'text-emerald-400' : 'text-slate-400 group-hover:text-slate-300'}>
+                  <span className={isActive ? 'text-cyan-400' : 'text-slate-500 group-hover:text-slate-300'}>
                     {item.icon}
                   </span>
                   <span className="truncate">{item.label}</span>
                 </div>
                 {item.badge !== undefined && (
-                  <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                  <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-slate-800 text-slate-400 border border-slate-700/60">
                     {item.badge}
                   </span>
                 )}
@@ -146,20 +128,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </nav>
       </div>
 
-      {/* Footer Info */}
-      <div className="p-3 rounded-lg bg-slate-900/70 border border-slate-800 text-slate-400 text-[11px] space-y-1">
-        <div className="flex items-center justify-between">
-          <span className="text-slate-400 font-medium">Stack Cost</span>
-          <span className="font-mono text-emerald-400 font-semibold">₹0.00 / $0.00</span>
-        </div>
-        <div className="flex items-center justify-between">
-          <span className="text-slate-400">Architecture</span>
-          <span className="font-mono text-slate-300">LangGraph 8-Stage</span>
-        </div>
-        <div className="flex items-center justify-between">
-          <span className="text-slate-400">Execution Mode</span>
-          <span className="font-mono text-slate-300">Deterministic</span>
-        </div>
+      {/* Secondary Footer link for System Architecture / Details */}
+      <div className="pt-3 border-t border-slate-800/70">
+        <button
+          type="button"
+          onClick={() => onSelectView('system-details')}
+          className={`w-full flex items-center space-x-2 px-3 py-2 rounded-lg text-[11px] font-mono transition text-left ${
+            activeView === 'system-details'
+              ? 'bg-slate-900 text-slate-200'
+              : 'text-slate-500 hover:text-slate-300 hover:bg-slate-900/50'
+          }`}
+        >
+          <svg className="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          <span className="truncate">System Details</span>
+        </button>
       </div>
     </aside>
   );

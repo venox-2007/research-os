@@ -22,13 +22,10 @@ import {
 
 import { Navbar } from '../components/Navbar';
 import { Sidebar } from '../components/Sidebar';
-import { StatusBadge } from '../components/StatusBadge';
-import { StageProgress } from '../components/StageProgress';
-import { ClaimModal } from '../components/ClaimModal';
-import { MetricsChart } from '../components/MetricsChart';
+import { TechnicalDetails } from '../components/TechnicalDetails';
 import { EmptyState } from '../components/EmptyState';
 import { WorkspacePage } from '../pages/WorkspacePage';
-import { RunsPage } from '../pages/RunsPage';
+import { MyResearchPage } from '../pages/MyResearchPage';
 import { EvidencePage } from '../pages/EvidencePage';
 import { SourcesPage } from '../pages/SourcesPage';
 import { ExperimentsPage } from '../pages/ExperimentsPage';
@@ -128,8 +125,8 @@ describe('API Client & Demo Mode Simulation', () => {
   });
 });
 
-describe('UI Component Server Rendering', () => {
-  it('renders Navbar with brand, status, and demo mode switch', () => {
+describe('Simplified UI Component Server Rendering', () => {
+  it('renders Navbar with brand, status, and demo banner', () => {
     const html = renderToString(
       <Navbar
         health={DEMO_HEALTH}
@@ -141,81 +138,39 @@ describe('UI Component Server Rendering', () => {
       />
     );
     expect(html).toContain('ResearchOS');
-    expect(html).toContain('Demo Mode:');
-    expect(html).toContain('Offline Demo');
+    expect(html).toContain('Demo Mode');
+    expect(html).toContain('Using synthetic demo data — no live research performed.');
   });
 
-  it('renders Sidebar with all 7 primary dashboard tabs', () => {
+  it('renders streamlined Sidebar with primary research navigation', () => {
     const html = renderToString(
       <Sidebar
-        activeView="workspace"
+        activeView="research"
         onSelectView={() => {}}
         evidenceCount={12}
         sourcesCount={5}
         experimentsCount={3}
+        savedRunsCount={2}
       />
     );
-    expect(html).toContain('Workspace');
-    expect(html).toContain('Research Runs');
-    expect(html).toContain('Evidence Explorer');
-    expect(html).toContain('Literature / Sources');
-    expect(html).toContain('Experiment Engine');
-    expect(html).toContain('Research Reports');
-    expect(html).toContain('System Architecture');
-    expect(html).toContain('₹0.00 / $0.00');
-  });
-
-  it('renders StatusBadge for semantic statuses with proper labels', () => {
-    const htmlCompleted = renderToString(<StatusBadge status="completed" />);
-    expect(htmlCompleted).toContain('completed');
-
-    const htmlRunning = renderToString(<StatusBadge status="running" />);
-    expect(htmlRunning).toContain('running');
-
-    const htmlVerified = renderToString(<StatusBadge status="SUPPORTED" />);
-    expect(htmlVerified).toContain('SUPPORTED');
-
-    const htmlFailed = renderToString(<StatusBadge status="failed" />);
-    expect(htmlFailed).toContain('failed');
-  });
-
-  it('renders StageProgress across all 8 autonomous lifecycle stages', () => {
-    const html = renderToString(<StageProgress currentStatus="completed" />);
-    expect(html).toContain('Question');
-    expect(html).toContain('Planning');
     expect(html).toContain('Research');
-    expect(html).toContain('Evidence Audit');
+    expect(html).toContain('My Research');
+    expect(html).toContain('Sources');
+    expect(html).toContain('Evidence');
     expect(html).toContain('Experiments');
-    expect(html).toContain('Synthesis');
-    expect(html).toContain('Citation Audit');
-    expect(html).toContain('Final Report');
+    expect(html).toContain('Reports');
+    expect(html).toContain('System Details');
+    expect(html).not.toContain('LangGraph 8-Stage'); // Technical jargon removed from primary nav
   });
 
-  it('renders ClaimModal with provenance DAG hierarchy', () => {
-    const claim = DEMO_CLAIMS[0];
+  it('renders TechnicalDetails expandable disclosure component', () => {
     const html = renderToString(
-      <ClaimModal
-        claim={claim}
-        evidenceList={DEMO_EVIDENCE}
-        sources={DEMO_SOURCES}
-        onClose={() => {}}
-      />
+      <TechnicalDetails title="View technical details">
+        <div>Node: planner, Execution Time: 12ms</div>
+      </TechnicalDetails>
     );
-    expect(html).toContain('Claim Provenance Inspector');
-    expect(html).toContain(claim.claim_text);
-    expect(html).toContain('Visual Provenance Lineage');
-    expect(html).toContain('Supporting Evidence Excerpt');
-  });
-
-  it('renders MetricsChart with empirical metrics data bars', () => {
-    const metrics = { 'mrr@10': 0.892, 'ndcg@10': 0.914, 'latency_ms': 18.5 };
-    const html = renderToString(
-      <MetricsChart metrics={metrics} title="Benchmark Results" />
-    );
-    expect(html).toContain('Benchmark Results');
-    expect(html).toContain('mrr@10');
-    expect(html).toContain('0.8920');
-    expect(html).toContain('latency_ms');
+    expect(html).toContain('View technical details');
+    expect(html).toContain('Expand');
   });
 
   it('renders EmptyState with custom title, description, and action button', () => {
@@ -233,11 +188,59 @@ describe('UI Component Server Rendering', () => {
   });
 });
 
-describe('Dashboard Page Views Server Rendering', () => {
-  it('renders WorkspacePage with prompt card and sample benchmarks', () => {
+describe('Streamlined Page Views Server Rendering', () => {
+  it('renders WorkspacePage landing state with clear hero, input, and suggestions', () => {
+    const html = renderToString(
+      <WorkspacePage
+        activeRun={null}
+        synthesisResult={null}
+        isLoading={false}
+        error={null}
+        onSubmitQuestion={() => {}}
+        onReset={() => {}}
+        onNavigateView={() => {}}
+        isDemo={false}
+      />
+    );
+    expect(html).toContain('Research anything.');
+    expect(html).toContain('ResearchOS searches academic literature, verifies evidence, runs experiments when useful, and builds a cited research report.');
+    expect(html).toContain('What do you want to research?');
+    expect(html).toContain('Start Research');
+    expect(html).toContain('How does hybrid retrieval improve RAG?');
+    expect(html).toContain('Compare CNN and Transformer speech enhancement.');
+    expect(html).toContain('What factors affect retrieval quality?');
+    expect(html).not.toContain('LangGraph'); // Technical implementation hidden
+  });
+
+  it('renders WorkspacePage running state with human-readable progress', () => {
+    const inProgressRun = { ...DEMO_RUN, status: 'researching' as const };
+    const html = renderToString(
+      <WorkspacePage
+        activeRun={inProgressRun}
+        synthesisResult={null}
+        isLoading={true}
+        error={null}
+        onSubmitQuestion={() => {}}
+        onReset={() => {}}
+        onNavigateView={() => {}}
+        isDemo={false}
+      />
+    );
+    expect(html).toContain('Researching your question...');
+    expect(html).toContain('Understanding the question');
+    expect(html).toContain('Searching academic literature');
+    expect(html).toContain('Analyzing evidence');
+    expect(html).toContain('Running experiments');
+    expect(html).toContain('Writing the report');
+    expect(html).toContain('Checking citations');
+    expect(html).toContain('View technical details');
+  });
+
+  it('renders WorkspacePage completion state with executive summary and key metrics', () => {
     const html = renderToString(
       <WorkspacePage
         activeRun={DEMO_RUN}
+        synthesisResult={DEMO_SYNTHESIS_RESULT}
         isLoading={false}
         error={null}
         onSubmitQuestion={() => {}}
@@ -246,91 +249,91 @@ describe('Dashboard Page Views Server Rendering', () => {
         isDemo={true}
       />
     );
-    expect(html).toContain('Research Workspace');
-    expect(html).toContain('Define Research Objective');
-    expect(html).toContain('Curated Research Benchmarks');
-    expect(html).toContain('Dense vs Hybrid RAG Retrieval');
-    expect(html).toContain('Active Orchestration Run');
+    expect(html).toContain('Research complete');
+    expect(html).toContain('Read Full Report');
+    expect(html).toContain('Explore Evidence');
+    expect(html).toContain('Citation coverage');
+    expect(html).toContain('Unsupported claims');
+    expect(html).toContain('Provenance');
+    expect(html).toContain('Technical details');
   });
 
-  it('renders RunsPage with LangGraph node timeline and plan decomposition', () => {
+  it('renders MyResearchPage with past runs list', () => {
     const html = renderToString(
-      <RunsPage
-        activeRun={DEMO_RUN}
-        historyRuns={[DEMO_RUN]}
+      <MyResearchPage
+        runs={[DEMO_RUN]}
         onSelectRun={() => {}}
+        onNewResearch={() => {}}
       />
     );
-    expect(html).toContain('Research Runs &amp; Agent Telemetry');
-    expect(html).toContain('Execution History');
-    expect(html).toContain('LangGraph Plan Decomposition');
-    expect(html).toContain('Node Execution Timeline &amp; Traces');
-    expect(html).toContain('Decomposing research query');
+    expect(html).toContain('My Research');
+    expect(html).toContain('Previous research investigations and findings.');
+    expect(html).toContain(DEMO_RUN.question);
+    expect(html).toContain('Completed');
+    expect(html).toContain('View result');
   });
 
-  it('renders EvidencePage with chunk cards and filtering controls', () => {
+  it('renders EvidencePage with clean evidence cards and location coordinates', () => {
     const html = renderToString(
       <EvidencePage
         evidenceList={DEMO_EVIDENCE}
         claimsList={DEMO_CLAIMS}
       />
     );
-    expect(html).toContain('Evidence Explorer &amp; Grounding DAG');
-    expect(html).toContain('Verified Claims');
-    expect(html).toContain('Search Content &amp; Sources');
-    expect(html).toContain('Extraction Method');
-    expect(html).toContain(DEMO_EVIDENCE[0].content.slice(0, 30));
+    expect(html).toContain('Evidence supporting your research');
+    expect(html).toContain('Claim');
+    expect(html).toContain('Location:');
+    expect(html).toContain('Supported');
+    expect(html).toContain('Technical details');
   });
 
-  it('renders SourcesPage with arXiv paper list and direct links', () => {
+  it('renders SourcesPage with clean academic literature cards', () => {
     const html = renderToString(
       <SourcesPage sourcesList={DEMO_SOURCES} />
     );
-    expect(html).toContain('Literature &amp; Academic Paper Acquisition');
-    expect(html).toContain('Discover on arXiv');
+    expect(html).toContain('Academic Literature &amp; Sources');
     expect(html).toContain('Attention Is All You Need');
-    expect(html).toContain('PDF');
+    expect(html).toContain('Vaswani, A.');
+    expect(html).toContain('Open Paper');
+    expect(html).toContain('Technical details');
   });
 
-  it('renders ExperimentsPage with sandbox routine launcher and metric graphs', () => {
+  it('renders ExperimentsPage with clear hypothesis and results table', () => {
     const html = renderToString(
       <ExperimentsPage
         experimentRuns={DEMO_EXPERIMENT_RUNS}
         onAddExperimentRun={() => {}}
       />
     );
-    expect(html).toContain('Experiment Engine');
-    expect(html).toContain('Sandboxed / Deterministic');
-    expect(html).toContain('Design &amp; Launch Experiment');
-    expect(html).toContain('Ranking Evaluation (RRF vs BM25)');
-    expect(html).toContain('Empirical Evaluation Metrics');
+    expect(html).toContain('Experiments');
+    expect(html).toContain('Experiments run by ResearchOS to test research hypotheses.');
+    expect(html).toContain('Hypothesis');
+    expect(html).toContain('Method');
+    expect(html).toContain('Dataset');
+    expect(html).toContain('Results');
+    expect(html).toContain('How was this experiment run?');
   });
 
-  it('renders ReportsPage with publication reader and quality control panel', () => {
+  it('renders ReportsPage as an academic publication reader with references', () => {
     const html = renderToString(
       <ReportsPage
         synthesisResult={DEMO_SYNTHESIS_RESULT}
         activeRun={DEMO_RUN}
         onUpdateReport={() => {}}
+        onNavigateHome={() => {}}
       />
     );
-    expect(html).toContain('Research Synthesis &amp; Quality Audit');
-    expect(html).toContain('Quality Control Audit');
-    expect(html).toContain('Provenance Completeness');
-    expect(html).toContain('Citation Correctness');
-    expect(html).toContain('Export .MD');
-    expect(html).toContain('Export JSON');
+    expect(html).toContain(DEMO_SYNTHESIS_RESULT.title);
+    expect(html).toContain('Abstract');
+    expect(html).toContain('References');
+    expect(html).toContain('Download Markdown');
+    expect(html).toContain('Technical report validation details');
   });
 
-  it('renders ArchitecturePage with the complete 8-stage pipeline and ₹0-cost audit', () => {
+  it('renders ArchitecturePage as secondary system details', () => {
     const html = renderToString(<ArchitecturePage />);
     expect(html).toContain('System Architecture &amp; ₹0 Cost Specifications');
     expect(html).toContain('Eight-Stage Deterministic Workflow');
-    expect(html).toContain('Question Formulation');
-    expect(html).toContain('Deterministic Orchestration');
-    expect(html).toContain('Hybrid RAG &amp; Indexing');
-    expect(html).toContain('Safe Experiment Sandbox');
-    expect(html).toContain('Citation Audit &amp; Guardrails');
     expect(html).toContain('Total Operational Cost: ₹0.00 / $0.00');
   });
 });

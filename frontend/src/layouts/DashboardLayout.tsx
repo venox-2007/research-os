@@ -16,6 +16,7 @@ interface DashboardLayoutProps {
   evidenceCount?: number;
   sourcesCount?: number;
   experimentsCount?: number;
+  savedRunsCount?: number;
 }
 
 export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
@@ -31,6 +32,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   evidenceCount = 0,
   sourcesCount = 0,
   experimentsCount = 0,
+  savedRunsCount = 0,
 }) => {
   return (
     <div className={`min-h-screen flex flex-col bg-slate-950 text-slate-100 ${theme === 'dark' ? 'dark' : ''}`}>
@@ -52,9 +54,10 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           evidenceCount={evidenceCount}
           sourcesCount={sourcesCount}
           experimentsCount={experimentsCount}
+          savedRunsCount={savedRunsCount}
         />
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+        <main className="flex-1 overflow-y-auto px-4 py-6 md:px-8">
           {children}
         </main>
       </div>

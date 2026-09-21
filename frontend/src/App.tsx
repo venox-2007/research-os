@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { DashboardLayout } from './layouts/DashboardLayout';
 import { DashboardView } from './components/Sidebar';
 import { WorkspacePage } from './pages/WorkspacePage';
-import { RunsPage } from './pages/RunsPage';
+import { MyResearchPage } from './pages/MyResearchPage';
 import { EvidencePage } from './pages/EvidencePage';
 import { SourcesPage } from './pages/SourcesPage';
 import { ExperimentsPage } from './pages/ExperimentsPage';
@@ -27,7 +27,7 @@ export const App: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
   const { health, isOnline } = useHealth();
   const [isDemo, setIsDemo] = useState<boolean>(() => isDemoMode());
-  const [activeView, setActiveView] = useState<DashboardView>('workspace');
+  const [activeView, setActiveView] = useState<DashboardView>('research');
 
   // Active Research Run state
   const { currentRun, setCurrentRun, startRun, loading: runLoading, error: runError } = useResearchRun(
@@ -91,25 +91,21 @@ export const App: React.FC = () => {
     }
   };
 
-  // Reset Run
+  // Reset / Start new query
   const handleResetRun = () => {
     setCurrentRun(null);
+    setActiveView('research');
   };
 
   // Select Run from history
-  const handleSelectRun = (runId: string) => {
-    const found = historyRuns.find((r) => r.run_id === runId);
-    if (found) setCurrentRun(found);
+  const handleSelectRun = (run: ResearchRunResponse) => {
+    setCurrentRun(run);
+    setActiveView('research');
   };
 
   // Add an experiment run
   const handleAddExperimentRun = (newRun: ExperimentRun) => {
     setExperimentRuns((prev) => [newRun, ...prev]);
-  };
-
-  // Add a source
-  const handleAddSource = (source: Source) => {
-    setSourcesList((prev) => [source, ...prev]);
   };
 
   // Update synthesized report
@@ -130,25 +126,26 @@ export const App: React.FC = () => {
       evidenceCount={evidenceList.length}
       sourcesCount={sourcesList.length}
       experimentsCount={experimentRuns.length}
+      savedRunsCount={historyRuns.length}
     >
-      {activeView === 'workspace' && (
+      {activeView === 'research' && (
         <WorkspacePage
           activeRun={currentRun}
+          synthesisResult={synthesisResult}
           isLoading={runLoading}
           error={runError}
           onSubmitQuestion={handleSubmitQuestion}
           onReset={handleResetRun}
-          onSelectClaim={(claim) => setSelectedClaim(claim)}
           onNavigateView={(view) => setActiveView(view)}
           isDemo={isDemo}
         />
       )}
 
-      {activeView === 'runs' && (
-        <RunsPage
-          activeRun={currentRun}
-          historyRuns={historyRuns}
+      {activeView === 'my-research' && (
+        <MyResearchPage
+          runs={historyRuns}
           onSelectRun={handleSelectRun}
+          onNewResearch={handleResetRun}
         />
       )}
 
@@ -157,22 +154,13 @@ export const App: React.FC = () => {
           evidenceList={evidenceList}
           claimsList={synthesisResult?.claims || (isDemo ? DEMO_CLAIMS : [])}
           onSelectClaim={(claim) => setSelectedClaim(claim)}
-          onSelectEvidence={(ev) => {
-            const matchedClaim = (synthesisResult?.claims || DEMO_CLAIMS).find((c) =>
-              c.supporting_evidence_ids.includes(ev.id)
-            );
-            if (matchedClaim) {
-              setSelectedClaim(matchedClaim);
-            }
-          }}
         />
       )}
 
       {activeView === 'sources' && (
         <SourcesPage
           sourcesList={sourcesList}
-          onAddSource={handleAddSource}
-          isDemo={isDemo}
+          onViewEvidence={() => setActiveView('evidence')}
         />
       )}
 
@@ -189,13 +177,14 @@ export const App: React.FC = () => {
           synthesisResult={synthesisResult}
           activeRun={currentRun}
           onUpdateReport={handleUpdateReport}
-          isDemo={isDemo}
+          evidenceList={evidenceList}
+          onNavigateHome={() => setActiveView('research')}
         />
       )}
 
-      {activeView === 'architecture' && <ArchitecturePage />}
+      {activeView === 'system-details' && <ArchitecturePage />}
 
-      {/* Provenance DAG Modal */}
+      {/* Provenance Lineage Modal */}
       {selectedClaim && (
         <ClaimModal
           claim={selectedClaim}
