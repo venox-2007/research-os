@@ -64,6 +64,8 @@ class ResearchWorker:
         sources = list(state.get("sources", []))
         existing_source_ids = {str(s.get("id")) for s in sources}
         search_queries = list(state.get("search_queries", []))
+        experiment_specs = list(state.get("experiment_specs", []))
+        experiment_results = list(state.get("experiment_results", []))
 
         for task in tasks_to_run:
             task_title = task.get("title", "Untitled Task")
@@ -147,6 +149,12 @@ class ResearchWorker:
                                     existing_source_ids.add(s_id)
                                     sources.append(raw_s)
 
+                        # Capture experiment specs and results
+                        if "spec" in res.data and isinstance(res.data["spec"], dict):
+                            experiment_specs.append(res.data["spec"])
+                        if "result_id" in res.data:
+                            experiment_results.append(res.data)
+
             # Update task status to completed
             updated_task = dict(task)
             updated_task["status"] = "completed"
@@ -178,6 +186,8 @@ class ResearchWorker:
             "status": "researching",
             "retrieved_evidence": retrieved_evidence,
             "sources": sources,
+            "experiment_specs": experiment_specs,
+            "experiment_results": experiment_results,
             "completed_tasks": completed_tasks,
             "pending_tasks": remaining_tasks,
             "search_queries": search_queries,
@@ -243,14 +253,40 @@ class ResearchWorker:
             res = await self.tools.invoke("web_search", query=query, max_results=3)
             results.append(res)
 
-        elif task_type == "critique":
-            # For critique tasks, search for failure modes, limitations, trade-offs
-            critique_query = f"{query} limitations trade-offs"
-            res_rag = await self.tools.invoke("search_rag", query=critique_query, top_k=3)
-            results.append(res_rag)
-            if self.tools.has_tool("web_search"):
-                res_web = await self.tools.invoke("web_search", query=critique_query, max_results=2)
-                results.append(res_web)
+        elif task_type in ("experiment_design", "plan_experiment"):
+            trace.record(
+                event_type="tool_call",
+                node_name="researcher",
+                message=f"Invoking plan_experiment for '{query}'",
+            )
+            res = await self.tools.invoke(
+                "plan_experiment",
+                task_title=query,
+                hypothesis=task_output.get("hypothesis"),
+            )
+            results.append(res)
+
+        elif task_type in ("experiment_run", "run_experiment"):
+            # Look for spec in task_output or plan a default benchmark spec
+            spec_payload = task_output.get("spec")
+            if not spec_payload:
+                plan_res = await self.tools.invoke(
+                    "plan_experiment",
+                    task_title=query,
+                    hypothesis=task_output.get("hypothesis"),
+                )
+                results.append(plan_res)
+                if plan_res.success and isinstance(plan_res.data, dict) and "spec" in plan_res.data:
+                    spec_payload = plan_res.data["spec"]
+
+            if spec_payload:
+                trace.record(
+                    event_type="tool_call",
+                    node_name="researcher",
+                    message=f"Invoking run_experiment for '{spec_payload.get('title', 'Experiment')}'",
+                )
+                res = await self.tools.invoke("run_experiment", spec=spec_payload)
+                results.append(res)
 
         else:
             # Fallback default: RAG search

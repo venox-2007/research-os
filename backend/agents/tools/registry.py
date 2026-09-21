@@ -8,6 +8,7 @@ from backend.agents.tools.academic_search import (
     SemanticScholarSearchTool,
 )
 from backend.agents.tools.base import BaseResearchTool, ToolResult
+from backend.agents.tools.experiment_tool import ExperimentPlanTool, ExperimentRunTool
 from backend.agents.tools.rag_search import RAGSearchTool
 from backend.agents.tools.web_search import WebSearchTool
 from backend.core.config import Settings, get_settings
@@ -82,5 +83,9 @@ def get_default_tool_registry(
 
     # Register Web research tool
     registry.register(WebSearchTool(settings=app_settings, mock_mode=mock_mode))
+
+    # Register Milestone 5 Experiment Engine tools
+    registry.register(ExperimentPlanTool(settings=app_settings))
+    registry.register(ExperimentRunTool(settings=app_settings))
 
     return registry

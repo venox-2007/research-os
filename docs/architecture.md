@@ -353,3 +353,87 @@ Dense Semantic Search          Sparse Lexical Search
 7. **IR Benchmark & Evaluation Suite (`backend/rag/evaluation.py`)**:
    - Evaluates retrieval performance across a gold academic corpus of 20 documents and 16 diverse benchmark queries spanning exact keywords, semantic paraphrases, section-specific requests, and terminology variants.
    - Calculates standard metrics: Recall@K, Precision@K, Mean Reciprocal Rank (MRR), and nDCG@K.
+
+---
+
+## 11. Safe Experiment Engine & Computational Provenance (Milestone 5)
+
+Implemented in Milestone 5, this subsystem enables ResearchOS to formulate testable hypotheses, synthesize standardized experiment specifications (`ExperimentSpec`), and safely execute computational benchmarking routines without executing arbitrary user-provided code.
+
+```
+Research Question / Hypothesis
+             │
+             ▼
+   [Experiment Planner]
+(LLM-driven + Heuristic Fallback)
+             │
+             ▼
+     [ExperimentSpec]
+(routine, parameters, dataset, seed, metrics)
+             │
+             ▼
+   [SafeExperimentRunner]
+ ┌───────────┴──────────────────────────┐
+ │  1. Injection Pattern Scanning       │
+ │  2. Whitelist Routine Verification   │
+ │  3. Path Traversal Defense           │
+ │  4. Timeout Supervision              │
+ └───────────┬──────────────────────────┘
+             ▼
+   [ExperimentRegistry]
+(linear_regression_benchmark, classification_eval,
+ ranking_evaluation, ablation_parameter_sweep,
+ statistical_significance_test)
+             │
+             ▼
+    [Execution Output]
+ ┌───────────┴──────────────────────────┐
+ │  - Metrics & Confidence Intervals    │
+ │  - Predictions & Summaries           │
+ │  - Headless Matplotlib PNG Plots     │
+ │  - Deterministic Hardware Profile    │
+ └───────────┬──────────────────────────┘
+             ▼
+      [ArtifactStore]
+ (data/artifacts/{run_id}/)
+             │
+             ▼
+    [Evidence Store Lineage]
+ (convert_experiment_to_evidence)
+```
+
+### Core Architecture Components:
+
+1. **Zero-Arbitrary Code Execution Threat Model**:
+   - Strictly prohibits `eval`, `exec`, `os.system`, `subprocess`, shell scripts, or arbitrary code compilation on the host machine.
+   - All executions are restricted to pre-audited, internal routines in `backend/experiments/registry.py`.
+   - Arguments are recursively scanned for hostile tokens (`os.system`, `subprocess`, `__import__`, `eval`, `exec`, `..`) via `_scan_for_injection`.
+   - Datasets and artifacts enforce sandboxed path traversal checks using canonical relative path resolution.
+
+2. **Standardized Routine Catalog (`backend/experiments/registry.py`)**:
+   - **`linear_regression_benchmark`**: Evaluates OLS linear models with synthetic or custom datasets, calculating MSE, RMSE, MAE, R², and scatter/residual plots.
+   - **`classification_eval`**: Trains logistic regression classifiers, reporting Accuracy, Precision, Recall, F1, Log Loss, and confusion matrix visualizations.
+   - **`ranking_evaluation`**: Evaluates ranking algorithms over query-document pairs, reporting MRR, MAP, NDCG@K, Precision@K, and Recall@K.
+   - **`ablation_parameter_sweep`**: Sweeps hyperparameters (e.g. learning rate, regularization), generating parameter-vs-metric curves.
+   - **`statistical_significance_test`**: Computes paired Student's t-tests, p-values, degrees of freedom, and Cohen's d effect size with boxplot visualizations.
+
+3. **Curated Synthetic Datasets (`backend/experiments/datasets.py`)**:
+   - `DatasetRegistry` manages synthetic generators (`synthetic_classification`, `synthetic_regression`, `synthetic_retrieval`) with deterministic seeds.
+   - Computes SHA-256 integrity checksums for all ingested and generated datasets.
+   - Resolves all paths strictly inside `data/datasets/`.
+
+4. **Sandboxed Artifact Store (`backend/experiments/artifacts.py`)**:
+   - Generates and manages run-specific directories (`data/artifacts/{run_id}/`).
+   - Standard artifacts: `metrics.json`, `predictions.csv`, `summary.json`, and headless `matplotlib` visualizations (`Agg` backend).
+   - Enforces SHA-256 checksum generation for artifact integrity.
+
+5. **Deterministic Reproducibility (`backend/experiments/reproducibility.py`)**:
+   - Fixed RNG seeding across `random`, `numpy`, and `scikit-learn`.
+   - Captures runtime environment profiles (Python version, OS, CPU architecture, library versions).
+   - Automated reproducibility verification verifying metric divergence $\Delta < 10^{-5}$ across consecutive runs with identical seed and configuration.
+
+6. **Agentic & Evidence Integration (`backend/experiments/provenance.py`)**:
+   - Full provenance chain: `Research Question -> Research Task -> Hypothesis -> ExperimentSpec -> ExperimentRun -> Metrics/Artifacts -> Evidence`.
+   - `convert_experiment_to_evidence()` converts completed experiment runs into domain `Evidence` records stored in the SQLite evidence store, complete with artifact links and metric summaries.
+   - Exposes `ExperimentPlanTool` and `ExperimentRunTool` inside `backend/agents/tools/` for seamless LangGraph orchestration.
+

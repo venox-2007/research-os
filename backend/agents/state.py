@@ -111,6 +111,10 @@ class ResearchState(TypedDict):
     verification_results: list[dict[str, Any]]
     sources: list[dict[str, Any]]
 
+    # Experiments (Milestone 5)
+    experiment_specs: list[dict[str, Any]]
+    experiment_results: list[dict[str, Any]]
+
     # Synthesis & Critique
     contradictions: list[str]
     research_notes: list[str]
@@ -148,6 +152,8 @@ def create_initial_research_state(
         verified_evidence=[],
         verification_results=[],
         sources=[],
+        experiment_specs=[],
+        experiment_results=[],
         contradictions=[],
         research_notes=[],
         critic_evaluations=[],
@@ -174,6 +180,8 @@ class ResearchRunResult(BaseModel):
     sources_count: int = 0
     verified_evidence: list[Evidence] = Field(default_factory=list)
     sources: list[Source] = Field(default_factory=list)
+    experiment_specs: list[dict[str, Any]] = Field(default_factory=list)
+    experiment_results: list[dict[str, Any]] = Field(default_factory=list)
     contradictions: list[str] = Field(default_factory=list)
     research_notes: list[str] = Field(default_factory=list)
     critic_summary: str | None = None

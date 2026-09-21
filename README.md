@@ -24,12 +24,12 @@ The entire architecture is designed to run with **zero financial cost**:
 ```
 research-os/
 ├── backend/
-│   ├── agents/          # Multi-agent graph orchestration (Planned M4)
-│   ├── rag/             # Dense FAISS + Sparse BM25 Hybrid RAG (Planned M3)
-│   ├── tools/           # arXiv, Semantic Scholar, Web retrieval (Planned M2)
-│   ├── ingestion/       # PDF parsing & structure-aware chunking (Planned M2)
-│   ├── evidence/        # Provenance mapping & citation verification (Planned M3/M6)
-│   ├── experiments/     # Sandboxed code execution engine (Planned M5)
+│   ├── agents/          # Multi-agent graph orchestration (Milestone 4)
+│   ├── rag/             # Dense FAISS + Sparse BM25 Hybrid RAG (Milestone 3)
+│   ├── tools/           # arXiv, Semantic Scholar, Web retrieval (Milestone 2)
+│   ├── ingestion/       # PDF parsing & structure-aware chunking (Milestone 2)
+│   ├── evidence/        # Provenance mapping & citation verification (Milestone 3)
+│   ├── experiments/     # Safe experiment engine & reproducible execution (Milestone 5)
 │   ├── llm/             # LLM provider abstraction & mock engine
 │   ├── api/             # FastAPI REST endpoints (/health, /api/v1/research)
 │   └── core/            # Configuration, structured logging, domain models, app factory
@@ -52,7 +52,7 @@ For complete architectural details, see [docs/architecture.md](docs/architecture
 - [x] **Milestone 2 — Research Acquisition + Paper Ingestion**: Free arXiv API client, Semantic Scholar client with rate-limit backoff, streaming PDF downloader with magic-byte verification, PyMuPDF page-level extraction, structure-aware academic chunking, and local cache management.
 - [x] **Milestone 3 — Hybrid RAG + Evidence Store**: Local `sentence-transformers` (`all-MiniLM-L6-v2`) + FAISS IndexFlatIP dense search, BM25Okapi sparse search, Reciprocal Rank Fusion (RRF, k=60), Cross-Encoder reranker (`ms-marco-MiniLM-L-6-v2`), SQLite evidence store with provenance tracking, and full IR evaluation benchmark suite.
 - [x] **Milestone 4 — Agentic Research Orchestration**: Deterministic LangGraph state machine (Planner, Researcher, Verifier, Critic, Finish), unified ToolRegistry (hybrid RAG, arXiv, Semantic Scholar, web search, paper ingestion), automated evidence auditing with contradiction detection, bounded refinement loops, and benchmark evaluation suite.
-- [ ] **Milestone 5 — Experiment Engine**: Automated experiment script generation, sandboxed execution, metrics extraction.
+- [x] **Milestone 5 — Safe Experiment Engine**: Whitelisted routine execution (no arbitrary code execution), injection scanning, synthetic datasets, classification/regression/ranking evaluation metrics, bootstrap confidence intervals, sandboxed artifact store, headless matplotlib visualization, deterministic reproducibility verification, REST API, and LangGraph integration.
 - [ ] **Milestone 6 — Critic + Citation Verification + Research Synthesis**: Claim-to-evidence entailment verification, citation generation, synthesis.
 - [ ] **Milestone 7 — Frontend / Research Dashboard**: Real-time agent execution visualization, evidence viewer, interactive report reader.
 - [ ] **Milestone 8 — Evaluation + Benchmarks + Final Documentation**: Standardized evaluation benchmarks and publication.
@@ -60,6 +60,7 @@ For complete architectural details, see [docs/architecture.md](docs/architecture
 For the full milestone roadmap, see [docs/implementation_plan.md](docs/implementation_plan.md).
 For detailed retrieval architecture, see [docs/rag.md](docs/rag.md).
 For multi-agent orchestration specifications, see [docs/agents.md](docs/agents.md).
+For safe experiment engine documentation, see [docs/experiments.md](docs/experiments.md).
 
 ---
 
@@ -137,7 +138,38 @@ curl -X POST "http://127.0.0.1:8000/api/v1/research/run" \
      }'
 ```
 
-### 7. Evaluation Benchmarks
+### 7. Safe Experiment Execution (Milestone 5)
+Design, run, and inspect reproducible experiments within a safe whitelist sandbox:
+```bash
+# Introspect available experiment routines and datasets
+curl "http://127.0.0.1:8000/api/v1/experiments/catalog"
+
+# Automatically plan an experiment from a research hypothesis
+curl -X POST "http://127.0.0.1:8000/api/v1/experiments/plan" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "task_description": "Evaluate logistic regression on noisy features",
+       "hypothesis": "L2 regularization will prevent overfitting"
+     }'
+
+# Execute a safe experiment run
+curl -X POST "http://127.0.0.1:8000/api/v1/experiments/run" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "routine_name": "classification_eval",
+       "parameters": {"penalty": "l2", "C": 1.0},
+       "dataset_name": "synthetic_classification",
+       "seed": 42
+     }'
+
+# Retrieve run telemetry and metrics
+curl "http://127.0.0.1:8000/api/v1/experiments/runs/{run_id}"
+
+# List generated artifacts (PNG plots, metrics.json, summary.json)
+curl "http://127.0.0.1:8000/api/v1/experiments/runs/{run_id}/artifacts"
+```
+
+### 8. Evaluation Benchmarks
 Run the automated evaluation benchmarks:
 ```bash
 # Milestone 3 — Hybrid RAG retrieval benchmark (BM25, Dense, Hybrid, Reranker)
@@ -145,15 +177,18 @@ python -m backend.rag.evaluation
 
 # Milestone 4 — Agentic research orchestration benchmark
 python -m backend.agents.evaluation
+
+# Milestone 5 — Safe experiment engine benchmark (Planning, Execution, Reproducibility, Security)
+python -m backend.experiments.evaluation
 ```
 
-### 8. Running Tests
+### 9. Running Tests
 All tests are 100% offline, deterministic, and require no API keys:
 ```bash
 python -m pytest tests/ -v
 ```
 
-### 9. Linting & Formatting
+### 10. Linting & Formatting
 ```bash
 python -m ruff check backend tests
 python -m ruff format --check backend tests

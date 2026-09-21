@@ -63,13 +63,20 @@ This implementation plan establishes the roadmap for transforming ResearchOS int
 
 ---
 
-### Milestone 5: Experiment Engine
-- **Objective**: Local computational experiment execution to empirically test hypotheses.
-- **Components**:
-  - `backend/experiments/designer.py`: Agent producing executable Python experiment scripts with validation checks.
-  - `backend/experiments/sandbox.py`: Process isolation, timeout supervision, memory safeguards, and standard I/O capture.
-  - `backend/experiments/metrics.py`: Metric parsing and visualization generation (`matplotlib`).
-- **Verification**: Run a local benchmarking experiment (e.g. data fitting or model evaluation script), log metrics, and save output charts.
+### Milestone 5: Safe Experiment Engine (COMPLETED)
+- [x] `backend/experiments/models.py`: Strongly typed Pydantic models for experiment specifications, configurations, metrics, and runs.
+- [x] `backend/experiments/datasets.py`: `DatasetRegistry` with SHA-256 integrity checks, path traversal defenses, and built-in synthetic generators.
+- [x] `backend/experiments/metrics.py`: Classification, regression, and ranking evaluation metrics, summary statistics, bootstrap confidence intervals, and paired t-tests.
+- [x] `backend/experiments/artifacts.py`: Sandboxed `ArtifactStore` generating `metrics.json`, `predictions.csv`, `summary.json`, and headless `matplotlib` figures (`Agg` backend).
+- [x] `backend/experiments/registry.py`: `ExperimentRegistry` with approved routines (`linear_regression_benchmark`, `classification_eval`, `ranking_evaluation`, `ablation_parameter_sweep`, `statistical_significance_test`).
+- [x] `backend/experiments/runner.py`: `SafeExperimentRunner` enforcing injection scanning, whitelisted routine execution, timeout supervision, and hardware telemetry.
+- [x] `backend/experiments/reproducibility.py`: Deterministic environment profiling and automated reproducibility verification ($\Delta < 10^{-5}$).
+- [x] `backend/experiments/planner.py`: Autonomous `ExperimentPlanner` translating research tasks into valid `ExperimentSpec`s.
+- [x] `backend/experiments/provenance.py`: Full lineage tracking converting experiment runs to evidence records (`convert_experiment_to_evidence`).
+- [x] `backend/agents/tools/experiment_tool.py`: `ExperimentPlanTool` and `ExperimentRunTool` integrated into LangGraph `ToolRegistry`.
+- [x] `backend/api/v1/endpoints/experiments.py`: REST endpoints `/api/v1/experiments/plan`, `/api/v1/experiments/run`, `/api/v1/experiments/specs/{spec_id}`, `/api/v1/experiments/runs/{run_id}`, `/api/v1/experiments/runs/{run_id}/artifacts`, `/api/v1/experiments/runs/{run_id}/artifacts/{filename}`, and `/api/v1/experiments/catalog`.
+- [x] `backend/experiments/evaluation.py`: Benchmark suite evaluating 9 tasks across planning, execution, reproducibility, and security (100% pass rate).
+- [x] 100% offline, deterministic pytest suite (150 passing tests).
 
 ---
 

@@ -237,6 +237,8 @@ async def run_research(
         sources_count=len(sources),
         verified_evidence=verified_evidence,
         sources=sources,
+        experiment_specs=final_state.get("experiment_specs", []),
+        experiment_results=final_state.get("experiment_results", []),
         contradictions=final_state.get("contradictions", []),
         research_notes=final_state.get("research_notes", []),
         critic_summary=last_eval.get("reason"),
