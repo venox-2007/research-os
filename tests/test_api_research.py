@@ -1,4 +1,6 @@
-"""Integration tests for the research submission API endpoint."""
+"""Integration tests for research submission and autonomous agent execution endpoints."""
+
+from uuid import uuid4
 
 import pytest
 from httpx import AsyncClient
@@ -40,3 +42,43 @@ async def test_submit_invalid_question(async_client: AsyncClient) -> None:
     assert response.status_code == 422
     data = response.json()
     assert data["error"] == "Validation Error"
+
+
+@pytest.mark.asyncio
+async def test_execute_research_run(async_client: AsyncClient) -> None:
+    """Verify POST /api/v1/research/run triggers autonomous agent workflow."""
+    payload = {
+        "question": "What are the computational trade-offs of hybrid RAG vs dense-only retrieval?",
+        "discipline": "Information Retrieval",
+        "constraints": ["Focus on latency and reciprocal rank fusion."],
+        "max_iterations": 2,
+    }
+    response = await async_client.post("/api/v1/research/run", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+
+    assert data["status"] == "completed"
+    assert data["question"] == payload["question"]
+    assert "run_id" in data
+    assert data["iteration_count"] >= 1
+    assert data["tasks_completed"] >= 1
+    assert len(data["verified_evidence"]) > 0
+    assert len(data["trace"]) >= 4
+
+    run_id = data["run_id"]
+
+    # Test retrieving research run by ID
+    get_res = await async_client.get(f"/api/v1/research/run/{run_id}")
+    assert get_res.status_code == 200
+    run_data = get_res.json()
+    assert run_data["run_id"] == run_id
+    assert run_data["question"] == payload["question"]
+    assert run_data["tasks_completed"] == data["tasks_completed"]
+
+
+@pytest.mark.asyncio
+async def test_get_nonexistent_research_run(async_client: AsyncClient) -> None:
+    """Verify 404 for invalid research run ID."""
+    random_id = uuid4()
+    response = await async_client.get(f"/api/v1/research/run/{random_id}")
+    assert response.status_code == 404

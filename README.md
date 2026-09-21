@@ -51,14 +51,15 @@ For complete architectural details, see [docs/architecture.md](docs/architecture
 - [x] **Milestone 1 — Engineering Foundation**: FastAPI backend factory, configuration, domain models, LLM provider abstraction with mock provider, developer tooling, React + Vite + TypeScript frontend, deterministic test suite.
 - [x] **Milestone 2 — Research Acquisition + Paper Ingestion**: Free arXiv API client, Semantic Scholar client with rate-limit backoff, streaming PDF downloader with magic-byte verification, PyMuPDF page-level extraction, structure-aware academic chunking, and local cache management.
 - [x] **Milestone 3 — Hybrid RAG + Evidence Store**: Local `sentence-transformers` (`all-MiniLM-L6-v2`) + FAISS IndexFlatIP dense search, BM25Okapi sparse search, Reciprocal Rank Fusion (RRF, k=60), Cross-Encoder reranker (`ms-marco-MiniLM-L-6-v2`), SQLite evidence store with provenance tracking, and full IR evaluation benchmark suite.
-- [ ] **Milestone 4 — LangGraph Agent System**: Autonomous multi-agent coordination (Supervisor, Researcher, Experimenter, Critic).
+- [x] **Milestone 4 — Agentic Research Orchestration**: Deterministic LangGraph state machine (Planner, Researcher, Verifier, Critic, Finish), unified ToolRegistry (hybrid RAG, arXiv, Semantic Scholar, web search, paper ingestion), automated evidence auditing with contradiction detection, bounded refinement loops, and benchmark evaluation suite.
 - [ ] **Milestone 5 — Experiment Engine**: Automated experiment script generation, sandboxed execution, metrics extraction.
 - [ ] **Milestone 6 — Critic + Citation Verification + Research Synthesis**: Claim-to-evidence entailment verification, citation generation, synthesis.
 - [ ] **Milestone 7 — Frontend / Research Dashboard**: Real-time agent execution visualization, evidence viewer, interactive report reader.
 - [ ] **Milestone 8 — Evaluation + Benchmarks + Final Documentation**: Standardized evaluation benchmarks and publication.
 
 For the full milestone roadmap, see [docs/implementation_plan.md](docs/implementation_plan.md).
-For detailed retrieval architecture and benchmark results, see [docs/rag.md](docs/rag.md).
+For detailed retrieval architecture, see [docs/rag.md](docs/rag.md).
+For multi-agent orchestration specifications, see [docs/agents.md](docs/agents.md).
 
 ---
 
@@ -123,19 +124,36 @@ curl -X POST "http://127.0.0.1:8000/api/v1/rag/search" \
 curl "http://127.0.0.1:8000/api/v1/evidence?limit=10"
 ```
 
-### 6. Retrieval Evaluation Benchmark
-Run the comprehensive evaluation benchmark across BM25, Dense, Hybrid (RRF), and Hybrid + Reranker:
+### 6. Autonomous Research Loop (Milestone 4)
+Trigger the full LangGraph orchestration loop (Planner -> Researcher -> Verifier -> Critic):
 ```bash
-python -m backend.rag.evaluation
+curl -X POST "http://127.0.0.1:8000/api/v1/research/run" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "question": "What are the computational trade-offs of hybrid RAG vs dense-only retrieval?",
+       "discipline": "Information Retrieval",
+       "constraints": ["focus on latency and reciprocal rank fusion"],
+       "max_iterations": 2
+     }'
 ```
 
-### 7. Running Tests
+### 7. Evaluation Benchmarks
+Run the automated evaluation benchmarks:
+```bash
+# Milestone 3 — Hybrid RAG retrieval benchmark (BM25, Dense, Hybrid, Reranker)
+python -m backend.rag.evaluation
+
+# Milestone 4 — Agentic research orchestration benchmark
+python -m backend.agents.evaluation
+```
+
+### 8. Running Tests
 All tests are 100% offline, deterministic, and require no API keys:
 ```bash
 python -m pytest tests/ -v
 ```
 
-### 8. Linting & Formatting
+### 9. Linting & Formatting
 ```bash
 python -m ruff check backend tests
 python -m ruff format --check backend tests

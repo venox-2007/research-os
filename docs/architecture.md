@@ -97,9 +97,9 @@ research-os/
 
 ---
 
-## 4. Planned Multi-Agent Workflow (LangGraph)
+## 4. Multi-Agent Workflow (Milestone 4 — Implemented)
 
-In Milestone 4, the autonomous workflow is orchestrated via a state graph:
+The autonomous research workflow is orchestrated via a deterministic, stateful LangGraph graph (`backend/agents/graph.py`):
 
 ```
                   +---------------------------+
@@ -108,40 +108,51 @@ In Milestone 4, the autonomous workflow is orchestrated via a state graph:
                                 |
                                 v
                   +---------------------------+
-                  |     Supervisor Agent      |
+                  |     Research Planner      |
                   |  (Decomposes into Plan)   |
                   +-------------+-------------+
                                 |
-        +-----------------------+-----------------------+
-        |                                               |
-        v                                               v
-+-------------------------------+             +-------------------------------+
-|   Literature Research Agent   |             |       Experiment Agent        |
-|  - Sourcing (arXiv, Scholar)  |             |  - Designs protocol / code    |
-|  - Ingestion & Hybrid RAG     |             |  - Executes in local sandbox  |
-|  - Evidence Extraction        |             |  - Extracts metrics & plots   |
-+---------------+---------------+             +---------------+---------------+
-        |                                               |
-        +-----------------------+-----------------------+
-                                |
                                 v
                   +---------------------------+
-                  |       Critic Agent        |
-                  |  - Verifies claim support |
-                  |  - Validates citations    |
-                  |  - Flags hallucinations   |
-                  +-------------+-------------+
-                                |
-                   [Pass Verification Check?]
-                     /                    \
-             (Yes)  /                      \ (No: Refine plan)
-                   v                        v
-     +--------------------------+    +--------------------------+
-     |     Synthesis Agent      |    |    Supervisor Feedback   |
-     | - Compiles final report  |    +--------------------------+
-     | - Traceable citations    |
-     +--------------------------+
+                  |      Research Worker      |◄────────────────┐
+                  |  (RAG, arXiv, S2, Web)    |                 │
+                  +-------------+-------------+                 │
+                                |                               │
+                                v                               │
+                  +---------------------------+                 │
+                  |     Evidence Verifier     |                 │
+                  |  - Audits claim support   |                 │
+                  |  - Checks coordinates     |                 │
+                  |  - Flags contradictions   |                 │
+                  +-------------+-------------+                 │
+                                |                               │ Refine Loop
+                                v                               │ (is_sufficient = False
+                  +---------------------------+                 │  & iter < max)
+                  |      Research Critic      |                 │
+                  |  - Evaluates sufficiency  |                 │
+                  |  - Proposes new tasks     |                 │
+                  +-------------+-------------+                 │
+                                |                               │
+                     [ Is Sufficient or Max? ]                  │
+                                |                               │
+                       No ──────┴───────────────────────────────┘
+                       │
+                      Yes
+                       │
+                       v
+         +--------------------------+
+         |       Finish Node        |
+         |  - Consolidates context  |
+         |  - Emits ResearchResult  |
+         +--------------------------+
 ```
+
+### Agent Node Roles:
+- **`ResearchPlanner`**: Decomposes the research question into atomic, non-redundant tasks (`literature_search`, `rag_query`, `critique`, `paper_ingestion`).
+- **`ResearchWorker`**: Dispatches tasks through `ToolRegistry` to query hybrid RAG, arXiv, Semantic Scholar, and web search.
+- **`EvidenceVerifier`**: Audits retrieved snippets for relevance, claim support (`supported`, `partially_supported`, `unsupported`), and detects conflicting empirical findings.
+- **`ResearchCritic`**: Evaluates completeness, determines whether the question is answered, proposes refinement tasks, and strictly enforces hard iteration limits (`max_iterations`).
+- **`finish`**: Consolidates state into `final_context`, compiles execution traces, and transitions to `completed`.
 
 ---
 

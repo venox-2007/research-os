@@ -130,6 +130,24 @@ class Settings(BaseSettings):
         description="Number of fused candidate chunks passed to cross-encoder reranker",
     )
 
+    # Agent Orchestration configuration (Milestone 4)
+    max_research_iterations: int = Field(
+        default=3,
+        ge=1,
+        le=10,
+        description="Maximum iterative research refinement loops",
+    )
+    research_timeout_seconds: int = Field(
+        default=120,
+        ge=10,
+        le=600,
+        description="Execution timeout for complete research workflow",
+    )
+    enable_web_search: bool = Field(
+        default=True,
+        description="Enable provider-agnostic free web research tool",
+    )
+
     @field_validator("log_level")
     @classmethod
     def validate_log_level(cls, value: str) -> str:

@@ -48,15 +48,18 @@ This implementation plan establishes the roadmap for transforming ResearchOS int
 
 ---
 
-### Milestone 4: LangGraph Agent System
-- **Objective**: Coordinate autonomous multi-agent research planning and execution.
-- **Components**:
-  - `backend/agents/state.py`: LangGraph typed state representing the evolving research context.
-  - `backend/agents/supervisor.py`: Task decomposition and plan generation agent.
-  - `backend/agents/researcher.py`: Paper query, acquisition, and retrieval agent.
-  - `backend/agents/graph.py`: State graph connecting agents, conditional routing, and termination criteria.
-  - Ollama local LLM integration (`backend/llm/ollama.py`) enabling fully offline agent decision-making.
-- **Verification**: End-to-end execution of a research question yielding a populated `ResearchPlan` and executed tasks.
+### Milestone 4: Agentic Research Orchestration (COMPLETED)
+- [x] `backend/agents/events.py`: Structured execution trace telemetry (`TraceEvent`, `TraceCollector`).
+- [x] `backend/agents/state.py`: Strongly typed, serializable `ResearchState` (LangGraph TypedDict), `VerificationResult`, `CriticEvaluation`, and `ResearchRunResult`.
+- [x] `backend/agents/tools/`: Unified `ToolRegistry` exposing `search_rag`, `search_arxiv`, `search_semantic_scholar`, `web_search`, and `ingest_paper` with ₹0-cost guarantees and deterministic offline mock support.
+- [x] `backend/agents/planner.py`: Autonomous `ResearchPlanner` generating prioritized task decompositions with structured JSON parsing and heuristic fallback.
+- [x] `backend/agents/researcher.py`: `ResearchWorker` node executing pending research tasks via `ToolRegistry`.
+- [x] `backend/agents/verifier.py`: `EvidenceVerifier` auditing retrieved excerpts for relevance, claim support (`supported`, `partially_supported`, `unsupported`), and flagging contradictions.
+- [x] `backend/agents/critic.py`: `ResearchCritic` assessing research completeness, spawning refinement tasks, and enforcing hard iteration boundaries.
+- [x] `backend/agents/graph.py`: LangGraph `StateGraph(ResearchState)` linking Planner -> Researcher -> Verifier -> Critic -> Finish with conditional refinement routing.
+- [x] `backend/api/v1/endpoints/research.py`: REST endpoints `POST /api/v1/research/run` and `GET /api/v1/research/run/{run_id}`.
+- [x] `backend/agents/evaluation.py`: Benchmark suite evaluating 6 academic research queries with 100% pass rate.
+- [x] 100% offline, deterministic pytest suite (106 passing tests).
 
 ---
 
