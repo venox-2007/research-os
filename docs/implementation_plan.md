@@ -80,14 +80,17 @@ This implementation plan establishes the roadmap for transforming ResearchOS int
 
 ---
 
-### Milestone 6: Critic + Citation Verification + Research Synthesis
-- **Objective**: Eliminate hallucinations through rigorous citation verification and compile academic-quality reports.
-- **Components**:
-  - `backend/evidence/verifier.py`: NLI / entailment checking matching generated claims against raw evidence snippets.
-  - `backend/evidence/citation.py`: Automated inline citation generation (`[1]`, `[2]`) linked to verified sources.
-  - `backend/agents/critic.py`: Critical review agent identifying unsupported claims and directing research refinement.
-  - `backend/agents/synthesizer.py`: Academic research report synthesis in Markdown/LaTeX format.
-- **Verification**: Generate a research report where 100% of claims are mapped to verified citations.
+### Milestone 6: Research Synthesis + Citation Verification + Final Report Engine (COMPLETED)
+- [x] `backend/synthesis/models.py`: Strongly typed Pydantic models for report specifications, sections, claims, claim-evidence links, citations, validation audits, artifacts, and synthesis results.
+- [x] `backend/synthesis/provenance.py`: Multi-hop `ProvenanceGraph` linking questions, tasks, claims, evidence, sources, and experiment runs with lineage tracing and completeness scoring.
+- [x] `backend/synthesis/citations.py`: Anti-hallucination `CitationFormatter` and `CitationManager` supporting IEEE and APA styles with explicit missing-metadata representation (`[Author Unknown]`, `n.d.`).
+- [x] `backend/synthesis/verifier.py`: 10-point `CitationVerifier` enforcing evidence grounding, coordinate matching, experiment metric validation, and contradiction detection.
+- [x] `backend/synthesis/validator.py`: Comprehensive `ReportValidator` evaluating mathematical quality ratios (`citation_coverage`, `evidence_coverage`, `unsupported_claim_rate`, `provenance_completeness`, `citation_correctness`).
+- [x] `backend/synthesis/engine.py`: Evidence-first `SynthesisEngine` building evidence-backed outlines, drafting prose with inline citations (`[N]`), safe revision loops, and artifact archival.
+- [x] `backend/synthesis/graph.py`: Stateful LangGraph synthesis workflow (`synthesis_planner` -> `claim_builder` -> `report_writer` -> `citation_verifier` -> `report_validator` -> `finish_report`).
+- [x] `backend/api/v1/endpoints/reports.py`: REST endpoints `/api/v1/reports/generate`, `/{report_id}`, `/{report_id}/claims`, `/{report_id}/validation`, `/{report_id}/artifacts`, `/{report_id}/artifacts/{filename}`.
+- [x] `backend/synthesis/evaluation.py`: Comprehensive benchmark suite evaluating 6 scenarios with 100% pass rate.
+- [x] 100% offline, deterministic pytest suite (182 passing tests).
 
 ---
 

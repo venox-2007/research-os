@@ -121,6 +121,33 @@ class ArtifactStore:
         self._record(artifact)
         return artifact
 
+    def save_text(
+        self,
+        run_id: UUID,
+        name: str,
+        content: str,
+        mime_type: str = "text/markdown",
+        artifact_type: str = "text",
+    ) -> Artifact:
+        """Write text/markdown data to disk and register as an artifact."""
+        target = self._safe_resolve_file(run_id, name)
+        with open(target, "w", encoding="utf-8") as f:
+            f.write(content)
+
+        file_hash = self._compute_sha256(target)
+        size_bytes = target.stat().st_size
+        artifact = Artifact(
+            run_id=run_id,
+            name=name,
+            artifact_type=artifact_type,
+            file_path=str(target),
+            file_hash=file_hash,
+            size_bytes=size_bytes,
+            mime_type=mime_type,
+        )
+        self._record(artifact)
+        return artifact
+
     def save_plot(
         self,
         run_id: UUID,

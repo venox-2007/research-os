@@ -437,3 +437,75 @@ Research Question / Hypothesis
    - `convert_experiment_to_evidence()` converts completed experiment runs into domain `Evidence` records stored in the SQLite evidence store, complete with artifact links and metric summaries.
    - Exposes `ExperimentPlanTool` and `ExperimentRunTool` inside `backend/agents/tools/` for seamless LangGraph orchestration.
 
+---
+
+## 12. Research Synthesis, Citation Verification & Final Report Engine (Milestone 6)
+
+Implemented in Milestone 6, this subsystem transforms verified literature evidence, primary academic sources, and empirical experiment results into a publication-ready, fully traceable academic report.
+
+```
+Evidence Store + Experiment Runs
+                │
+                ▼
+      [Provenance Graph]
+ (Multi-hop Causal DAG Lineage)
+                │
+                ▼
+      [Synthesis Planner]
+   (Evidence-Backed Outline)
+                │
+                ▼
+        [Report Writer]
+ (Prose + Inline Citations [N])
+                │
+                ▼
+      [Citation Verifier]
+ (10-Point Grounding & Anti-Hallucination)
+                │
+                ▼
+       [Report Validator]
+ (Quantitative Quality Ratios)
+                │
+      ┌─────────┴─────────┐
+    Valid               Invalid
+      │                   │
+      ▼                   ▼
+ [Finish Report]    [Revision Loop]
+ (MD/JSON + Artifacts)  (Pruning & Reformulation)
+```
+
+### Core Architecture Components:
+
+1. **Evidence-First Generation**:
+   - The LLM is strictly assistive for prose formatting and summarization. It is never the source of factual truth.
+   - Factual claims are constructed from verified excerpts before prose generation begins.
+   - Every factual claim maintains explicit machine-readable links to `Evidence`, `Source`, and `ExperimentRun` IDs.
+
+2. **Explicit Lineage Provenance Graph (`backend/synthesis/provenance.py`)**:
+   - Literature Lineage: `Question -> Task -> Claim -> Evidence -> Source -> Page / Section / Chunk`.
+   - Experiment Lineage: `Question -> Hypothesis -> ExperimentSpec -> ExperimentRun -> MetricResult / Artifact -> Claim`.
+
+3. **Strict Citation Verifier (`backend/synthesis/verifier.py`)**:
+   - Enforces a 10-point audit protocol ensuring claims have verified backing evidence, token overlap, accurate page/section coordinates, valid source IDs, and verified numerical experiment metrics.
+   - Does not silently upgrade `PARTIALLY_SUPPORTED` claims into `SUPPORTED`.
+   - Flags conflicting findings as `CONTRADICTED` and routes them to discussion sections.
+
+4. **Zero Bibliographic Fabrication (`backend/synthesis/citations.py`)**:
+   - Bibliographic metadata is generated deterministically from registered sources.
+   - Missing fields are truthfully rendered as `[Author Unknown]` or `n.d.` (no date) without fabricating DOIs, venues, or author identities.
+
+5. **Quantitative Report Validation (`backend/synthesis/validator.py`)**:
+   - Measures exact mathematical quality ratios:
+     - `citation_coverage`
+     - `evidence_coverage`
+     - `unsupported_claim_rate`
+     - `provenance_completeness`
+     - `citation_correctness`
+     - `contradiction_count`
+   - Fails safely if critical claims lack evidence or citations are fabricated.
+
+6. **LangGraph Synthesis Workflow & REST API (`backend/synthesis/graph.py`, `backend/api/v1/endpoints/reports.py`)**:
+   - Assembles a stateful workflow with bounded revision loops (`synthesis_planner` -> `claim_builder` -> `report_writer` -> `citation_verifier` -> `report_validator` -> `finish_report`).
+   - Exposes REST endpoints for report synthesis, claim inspection, validation metrics, and artifact downloading.
+
+

@@ -30,6 +30,7 @@ research-os/
 │   ├── ingestion/       # PDF parsing & structure-aware chunking (Milestone 2)
 │   ├── evidence/        # Provenance mapping & citation verification (Milestone 3)
 │   ├── experiments/     # Safe experiment engine & reproducible execution (Milestone 5)
+│   ├── synthesis/       # Evidence-first report synthesis & citation verification (Milestone 6)
 │   ├── llm/             # LLM provider abstraction & mock engine
 │   ├── api/             # FastAPI REST endpoints (/health, /api/v1/research)
 │   └── core/            # Configuration, structured logging, domain models, app factory
@@ -53,7 +54,7 @@ For complete architectural details, see [docs/architecture.md](docs/architecture
 - [x] **Milestone 3 — Hybrid RAG + Evidence Store**: Local `sentence-transformers` (`all-MiniLM-L6-v2`) + FAISS IndexFlatIP dense search, BM25Okapi sparse search, Reciprocal Rank Fusion (RRF, k=60), Cross-Encoder reranker (`ms-marco-MiniLM-L-6-v2`), SQLite evidence store with provenance tracking, and full IR evaluation benchmark suite.
 - [x] **Milestone 4 — Agentic Research Orchestration**: Deterministic LangGraph state machine (Planner, Researcher, Verifier, Critic, Finish), unified ToolRegistry (hybrid RAG, arXiv, Semantic Scholar, web search, paper ingestion), automated evidence auditing with contradiction detection, bounded refinement loops, and benchmark evaluation suite.
 - [x] **Milestone 5 — Safe Experiment Engine**: Whitelisted routine execution (no arbitrary code execution), injection scanning, synthetic datasets, classification/regression/ranking evaluation metrics, bootstrap confidence intervals, sandboxed artifact store, headless matplotlib visualization, deterministic reproducibility verification, REST API, and LangGraph integration.
-- [ ] **Milestone 6 — Critic + Citation Verification + Research Synthesis**: Claim-to-evidence entailment verification, citation generation, synthesis.
+- [x] **Milestone 6 — Research Synthesis + Citation Verification + Final Report Engine**: Evidence-first generation architecture, multi-hop claim-to-evidence ProvenanceGraph, 10-point CitationVerifier, anti-hallucination CitationFormatter (IEEE/APA), quantitative ReportValidator (coverage, unsupported rate, contradiction counts), LangGraph synthesis workflow, and publication-ready Markdown/JSON report artifacts.
 - [ ] **Milestone 7 — Frontend / Research Dashboard**: Real-time agent execution visualization, evidence viewer, interactive report reader.
 - [ ] **Milestone 8 — Evaluation + Benchmarks + Final Documentation**: Standardized evaluation benchmarks and publication.
 
@@ -61,6 +62,7 @@ For the full milestone roadmap, see [docs/implementation_plan.md](docs/implement
 For detailed retrieval architecture, see [docs/rag.md](docs/rag.md).
 For multi-agent orchestration specifications, see [docs/agents.md](docs/agents.md).
 For safe experiment engine documentation, see [docs/experiments.md](docs/experiments.md).
+For research synthesis & citation verification documentation, see [docs/synthesis.md](docs/synthesis.md).
 
 ---
 
@@ -169,7 +171,32 @@ curl "http://127.0.0.1:8000/api/v1/experiments/runs/{run_id}"
 curl "http://127.0.0.1:8000/api/v1/experiments/runs/{run_id}/artifacts"
 ```
 
-### 8. Evaluation Benchmarks
+### 8. Evidence-Grounded Research Synthesis (Milestone 6)
+Synthesize fully grounded, publication-ready research reports with traceable citations and automated audits:
+```bash
+# Generate a verified research report from literature and experiment results
+curl -X POST "http://127.0.0.1:8000/api/v1/reports/generate" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "question": "How do attention mechanisms and lexical BM25 retrieval complement each other in hybrid RAG?",
+       "discipline": "Computer Science",
+       "max_revisions": 2
+     }'
+
+# Retrieve full synthesized report deliverable
+curl "http://127.0.0.1:8000/api/v1/reports/{report_id}"
+
+# Inspect structured claims and underlying evidence links
+curl "http://127.0.0.1:8000/api/v1/reports/{report_id}/claims"
+
+# Inspect quality audit report (unsupported rate, coverage, correctness)
+curl "http://127.0.0.1:8000/api/v1/reports/{report_id}/validation"
+
+# Download generated Markdown report artifact
+curl "http://127.0.0.1:8000/api/v1/reports/{report_id}/artifacts/report.md"
+```
+
+### 9. Evaluation Benchmarks
 Run the automated evaluation benchmarks:
 ```bash
 # Milestone 3 — Hybrid RAG retrieval benchmark (BM25, Dense, Hybrid, Reranker)
@@ -180,15 +207,18 @@ python -m backend.agents.evaluation
 
 # Milestone 5 — Safe experiment engine benchmark (Planning, Execution, Reproducibility, Security)
 python -m backend.experiments.evaluation
+
+# Milestone 6 — Research synthesis and citation verification benchmark
+python -m backend.synthesis.evaluation
 ```
 
-### 9. Running Tests
+### 10. Running Tests
 All tests are 100% offline, deterministic, and require no API keys:
 ```bash
 python -m pytest tests/ -v
 ```
 
-### 10. Linting & Formatting
+### 11. Linting & Formatting
 ```bash
 python -m ruff check backend tests
 python -m ruff format --check backend tests
