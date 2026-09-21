@@ -54,8 +54,7 @@ For complete architectural details, see [docs/architecture.md](docs/architecture
 - [x] **Milestone 3 — Hybrid RAG + Evidence Store**: Local `sentence-transformers` (`all-MiniLM-L6-v2`) + FAISS IndexFlatIP dense search, BM25Okapi sparse search, Reciprocal Rank Fusion (RRF, k=60), Cross-Encoder reranker (`ms-marco-MiniLM-L-6-v2`), SQLite evidence store with provenance tracking, and full IR evaluation benchmark suite.
 - [x] **Milestone 4 — Agentic Research Orchestration**: Deterministic LangGraph state machine (Planner, Researcher, Verifier, Critic, Finish), unified ToolRegistry (hybrid RAG, arXiv, Semantic Scholar, web search, paper ingestion), automated evidence auditing with contradiction detection, bounded refinement loops, and benchmark evaluation suite.
 - [x] **Milestone 5 — Safe Experiment Engine**: Whitelisted routine execution (no arbitrary code execution), injection scanning, synthetic datasets, classification/regression/ranking evaluation metrics, bootstrap confidence intervals, sandboxed artifact store, headless matplotlib visualization, deterministic reproducibility verification, REST API, and LangGraph integration.
-- [x] **Milestone 6 — Research Synthesis + Citation Verification + Final Report Engine**: Evidence-first generation architecture, multi-hop claim-to-evidence ProvenanceGraph, 10-point CitationVerifier, anti-hallucination CitationFormatter (IEEE/APA), quantitative ReportValidator (coverage, unsupported rate, contradiction counts), LangGraph synthesis workflow, and publication-ready Markdown/JSON report artifacts.
-- [ ] **Milestone 7 — Frontend / Research Dashboard**: Real-time agent execution visualization, evidence viewer, interactive report reader.
+- [x] **Milestone 7 — Frontend / Research Dashboard**: High-density React 18 + Vite + TypeScript research console with 7 views (Workspace, Research Runs, Evidence Explorer with Claim Provenance DAG modal, Sources / Literature, Experiment Engine with SVG metrics, Research Reports with quality audit, and System Architecture), offline demo mode, and Vitest test suite.
 - [ ] **Milestone 8 — Evaluation + Benchmarks + Final Documentation**: Standardized evaluation benchmarks and publication.
 
 For the full milestone roadmap, see [docs/implementation_plan.md](docs/implementation_plan.md).
@@ -63,6 +62,7 @@ For detailed retrieval architecture, see [docs/rag.md](docs/rag.md).
 For multi-agent orchestration specifications, see [docs/agents.md](docs/agents.md).
 For safe experiment engine documentation, see [docs/experiments.md](docs/experiments.md).
 For research synthesis & citation verification documentation, see [docs/synthesis.md](docs/synthesis.md).
+For frontend research dashboard documentation, see [docs/frontend.md](docs/frontend.md).
 
 ---
 

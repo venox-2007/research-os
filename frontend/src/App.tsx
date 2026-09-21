@@ -1,175 +1,210 @@
-import React, { useState, useEffect } from 'react';
-import { fetchHealth, submitResearchQuestion, HealthResponse, ResearchQuestionResponse } from './api';
+import React, { useState } from 'react';
+import { DashboardLayout } from './layouts/DashboardLayout';
+import { DashboardView } from './components/Sidebar';
+import { WorkspacePage } from './pages/WorkspacePage';
+import { RunsPage } from './pages/RunsPage';
+import { EvidencePage } from './pages/EvidencePage';
+import { SourcesPage } from './pages/SourcesPage';
+import { ExperimentsPage } from './pages/ExperimentsPage';
+import { ReportsPage } from './pages/ReportsPage';
+import { ArchitecturePage } from './pages/ArchitecturePage';
+import { ClaimModal } from './components/ClaimModal';
+import { useHealth } from './hooks/useHealth';
+import { useTheme } from './hooks/useTheme';
+import { useResearchRun } from './hooks/useResearchRun';
+import { isDemoMode, setDemoMode } from './services/api';
+import {
+  DEMO_RUN,
+  DEMO_SOURCES,
+  DEMO_EVIDENCE,
+  DEMO_CLAIMS,
+  DEMO_EXPERIMENT_RUNS,
+  DEMO_SYNTHESIS_RESULT,
+} from './services/mockData';
+import { Source, Evidence, ExperimentRun, SynthesisResult, ResearchClaim, ResearchRunResponse } from './types';
 
 export const App: React.FC = () => {
-  const [health, setHealth] = useState<HealthResponse | null>(null);
-  const [healthStatus, setHealthStatus] = useState<'checking' | 'online' | 'offline'>('checking');
-  const [query, setQuery] = useState('');
-  const [discipline, setDiscipline] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submittedQuestion, setSubmittedQuestion] = useState<ResearchQuestionResponse | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { theme, toggleTheme } = useTheme();
+  const { health, isOnline } = useHealth();
+  const [isDemo, setIsDemo] = useState<boolean>(() => isDemoMode());
+  const [activeView, setActiveView] = useState<DashboardView>('workspace');
 
-  useEffect(() => {
-    let isMounted = true;
+  // Active Research Run state
+  const { currentRun, setCurrentRun, startRun, loading: runLoading, error: runError } = useResearchRun(
+    isDemo ? DEMO_RUN : null
+  );
 
-    async function checkBackend() {
-      try {
-        const data = await fetchHealth();
-        if (isMounted) {
-          setHealth(data);
-          setHealthStatus('online');
-        }
-      } catch {
-        if (isMounted) {
-          setHealthStatus('offline');
-        }
-      }
-    }
+  // Entities state
+  const [historyRuns, setHistoryRuns] = useState<ResearchRunResponse[]>(() => (isDemo ? [DEMO_RUN] : []));
+  const [sourcesList, setSourcesList] = useState<Source[]>(() => (isDemo ? DEMO_SOURCES : []));
+  const [evidenceList, setEvidenceList] = useState<Evidence[]>(() => (isDemo ? DEMO_EVIDENCE : []));
+  const [experimentRuns, setExperimentRuns] = useState<ExperimentRun[]>(() =>
+    isDemo ? DEMO_EXPERIMENT_RUNS : []
+  );
+  const [synthesisResult, setSynthesisResult] = useState<SynthesisResult | null>(() =>
+    isDemo ? DEMO_SYNTHESIS_RESULT : null
+  );
+  const [selectedClaim, setSelectedClaim] = useState<ResearchClaim | null>(null);
 
-    checkBackend();
-    const interval = setInterval(checkBackend, 15000);
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
-  }, []);
+  // Toggle Demo Mode
+  const handleToggleDemo = () => {
+    const nextMode = !isDemo;
+    setDemoMode(nextMode);
+    setIsDemo(nextMode);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!query.trim() || isSubmitting) return;
-
-    setIsSubmitting(true);
-    setErrorMessage(null);
-
-    try {
-      const result = await submitResearchQuestion(query.trim(), discipline.trim() || undefined);
-      setSubmittedQuestion(result);
-      setQuery('');
-    } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : 'Failed to submit research question');
-    } finally {
-      setIsSubmitting(false);
+    if (nextMode) {
+      setCurrentRun(DEMO_RUN);
+      setHistoryRuns([DEMO_RUN]);
+      setSourcesList(DEMO_SOURCES);
+      setEvidenceList(DEMO_EVIDENCE);
+      setExperimentRuns(DEMO_EXPERIMENT_RUNS);
+      setSynthesisResult(DEMO_SYNTHESIS_RESULT);
+    } else {
+      setCurrentRun(null);
+      setHistoryRuns([]);
+      setSourcesList([]);
+      setEvidenceList([]);
+      setExperimentRuns([]);
+      setSynthesisResult(null);
     }
   };
 
+  // Submit Question Handler
+  const handleSubmitQuestion = async (
+    query: string,
+    discipline?: string,
+    maxIterations: number = 3
+  ) => {
+    try {
+      const run = await startRun(query, discipline, [], maxIterations);
+      if (run) {
+        setHistoryRuns((prev) => [run, ...prev.filter((r) => r.run_id !== run.run_id)]);
+        if (run.sources && run.sources.length > 0) {
+          setSourcesList((prev) => [...run.sources, ...prev]);
+        }
+        if (run.verified_evidence && run.verified_evidence.length > 0) {
+          setEvidenceList((prev) => [...run.verified_evidence, ...prev]);
+        }
+      }
+    } catch {
+      // Error handled by useResearchRun
+    }
+  };
+
+  // Reset Run
+  const handleResetRun = () => {
+    setCurrentRun(null);
+  };
+
+  // Select Run from history
+  const handleSelectRun = (runId: string) => {
+    const found = historyRuns.find((r) => r.run_id === runId);
+    if (found) setCurrentRun(found);
+  };
+
+  // Add an experiment run
+  const handleAddExperimentRun = (newRun: ExperimentRun) => {
+    setExperimentRuns((prev) => [newRun, ...prev]);
+  };
+
+  // Add a source
+  const handleAddSource = (source: Source) => {
+    setSourcesList((prev) => [source, ...prev]);
+  };
+
+  // Update synthesized report
+  const handleUpdateReport = (report: SynthesisResult) => {
+    setSynthesisResult(report);
+  };
+
   return (
-    <div className="app-container">
-      <header className="header">
-        <div className="title-row">
-          <div>
-            <h1>ResearchOS</h1>
-            <p className="subtitle">Autonomous AI Research Engineer &bull; ₹0 Cost Foundation</p>
-          </div>
-          <div>
-            {healthStatus === 'checking' && (
-              <span className="badge checking">
-                <span className="dot" /> Checking Backend
-              </span>
-            )}
-            {healthStatus === 'online' && health && (
-              <span className="badge online" title={`LLM Provider: ${health.llm_provider}`}>
-                <span className="dot" /> Backend Online (v{health.version})
-              </span>
-            )}
-            {healthStatus === 'offline' && (
-              <span className="badge offline">
-                <span className="dot" /> Backend Offline
-              </span>
-            )}
-          </div>
-        </div>
-      </header>
+    <DashboardLayout
+      activeView={activeView}
+      onSelectView={setActiveView}
+      health={health}
+      isOnline={isOnline}
+      isDemo={isDemo}
+      onToggleDemo={handleToggleDemo}
+      theme={theme}
+      onToggleTheme={toggleTheme}
+      evidenceCount={evidenceList.length}
+      sourcesCount={sourcesList.length}
+      experimentsCount={experimentRuns.length}
+    >
+      {activeView === 'workspace' && (
+        <WorkspacePage
+          activeRun={currentRun}
+          isLoading={runLoading}
+          error={runError}
+          onSubmitQuestion={handleSubmitQuestion}
+          onReset={handleResetRun}
+          onSelectClaim={(claim) => setSelectedClaim(claim)}
+          onNavigateView={(view) => setActiveView(view)}
+          isDemo={isDemo}
+        />
+      )}
 
-      <main>
-        <section className="card">
-          <h2>Submit Research Question</h2>
-          <p className="subtitle" style={{ marginBottom: '1.25rem' }}>
-            Formulate a research query, hypothesis, or literature investigation.
-          </p>
+      {activeView === 'runs' && (
+        <RunsPage
+          activeRun={currentRun}
+          historyRuns={historyRuns}
+          onSelectRun={handleSelectRun}
+        />
+      )}
 
-          {errorMessage && <div className="error-banner">{errorMessage}</div>}
+      {activeView === 'evidence' && (
+        <EvidencePage
+          evidenceList={evidenceList}
+          claimsList={synthesisResult?.claims || (isDemo ? DEMO_CLAIMS : [])}
+          onSelectClaim={(claim) => setSelectedClaim(claim)}
+          onSelectEvidence={(ev) => {
+            const matchedClaim = (synthesisResult?.claims || DEMO_CLAIMS).find((c) =>
+              c.supporting_evidence_ids.includes(ev.id)
+            );
+            if (matchedClaim) {
+              setSelectedClaim(matchedClaim);
+            }
+          }}
+        />
+      )}
 
-          <form onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label htmlFor="discipline-input">Discipline / Academic Field (Optional)</label>
-              <input
-                id="discipline-input"
-                type="text"
-                placeholder="e.g. Machine Learning, Computational Biology, Physics"
-                value={discipline}
-                onChange={(e) => setDiscipline(e.target.value)}
-                disabled={isSubmitting}
-              />
-            </div>
+      {activeView === 'sources' && (
+        <SourcesPage
+          sourcesList={sourcesList}
+          onAddSource={handleAddSource}
+          isDemo={isDemo}
+        />
+      )}
 
-            <div className="form-group">
-              <label htmlFor="question-input">Research Question *</label>
-              <textarea
-                id="question-input"
-                rows={4}
-                placeholder="e.g. How does direct preference optimization compare to PPO on sample efficiency for small reasoning models?"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                required
-                disabled={isSubmitting}
-              />
-            </div>
+      {activeView === 'experiments' && (
+        <ExperimentsPage
+          experimentRuns={experimentRuns}
+          onAddExperimentRun={handleAddExperimentRun}
+          isDemo={isDemo}
+        />
+      )}
 
-            <button type="submit" disabled={isSubmitting || !query.trim()}>
-              {isSubmitting ? 'Submitting to Queue...' : 'Submit to Research Queue'}
-            </button>
-          </form>
+      {activeView === 'reports' && (
+        <ReportsPage
+          synthesisResult={synthesisResult}
+          activeRun={currentRun}
+          onUpdateReport={handleUpdateReport}
+          isDemo={isDemo}
+        />
+      )}
 
-          {submittedQuestion && (
-            <div className="result-box">
-              <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1rem', color: '#166534' }}>
-                &check; Research Question Registered
-              </h3>
-              <p style={{ margin: '0.25rem 0', fontSize: '0.95rem' }}>
-                <strong>Query:</strong> {submittedQuestion.query}
-              </p>
-              <div className="meta-grid">
-                <div className="meta-item">
-                  <strong>ID:</strong> {submittedQuestion.id.slice(0, 8)}...
-                </div>
-                <div className="meta-item">
-                  <strong>Status:</strong> {submittedQuestion.status}
-                </div>
-                <div className="meta-item">
-                  <strong>Discipline:</strong> {submittedQuestion.discipline || 'General'}
-                </div>
-                <div className="meta-item">
-                  <strong>Timestamp:</strong> {new Date(submittedQuestion.created_at).toLocaleTimeString()}
-                </div>
-              </div>
-            </div>
-          )}
-        </section>
+      {activeView === 'architecture' && <ArchitecturePage />}
 
-        {health && (
-          <section className="card" style={{ backgroundColor: '#fafafa' }}>
-            <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '0.95rem', color: '#475569' }}>
-              System Runtime Status
-            </h3>
-            <div className="meta-grid">
-              <div className="meta-item">
-                <strong>Environment:</strong> {health.environment}
-              </div>
-              <div className="meta-item">
-                <strong>LLM Provider:</strong> {health.llm_provider}
-              </div>
-              <div className="meta-item">
-                <strong>LLM Status:</strong> {health.llm_available ? 'Available' : 'Unavailable'}
-              </div>
-              <div className="meta-item">
-                <strong>Cost Constraint:</strong> &#8377;0 (Free/Local)
-              </div>
-            </div>
-          </section>
-        )}
-      </main>
-    </div>
+      {/* Provenance DAG Modal */}
+      {selectedClaim && (
+        <ClaimModal
+          claim={selectedClaim}
+          evidenceList={evidenceList}
+          sources={sourcesList}
+          onClose={() => setSelectedClaim(null)}
+        />
+      )}
+    </DashboardLayout>
   );
 };
 

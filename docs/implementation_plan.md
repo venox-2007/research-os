@@ -96,12 +96,12 @@ This implementation plan establishes the roadmap for transforming ResearchOS int
 
 ### Milestone 7: Frontend / Research Dashboard
 - **Objective**: Deliver a comprehensive user interface for monitoring research progress and inspecting deliverables.
-- **Components**:
-  - Real-time agent status and graph execution visualization.
-  - Evidence inspection modal showing verbatim text excerpts and original PDF pages.
-  - Interactive experiment runner and metrics display.
-  - Research report reader with interactive citation hovercards and BibTeX export.
-- **Verification**: Run an entire research query from the UI and review the generated report and citations.
+- [x] React 18 + TypeScript + Vite 5 + Tailwind CSS high-density research console (`₹0` cost).
+- [x] 7 dedicated views: Workspace (8-stage progress tracker), Research Runs (LangGraph trace timeline), Evidence Explorer (Claim-to-Evidence Grounding DAG modal), Sources / Literature (arXiv discovery & paper cards), Experiment Engine (pure SVG metrics charts & runner), Research Reports (Markdown reader with quality control audit panel), and System Architecture.
+- [x] Deterministic Offline Demo Mode with rich synthetic benchmark data (`Vaswani et al.`, `Robertson & Zaragoza`, `Karpukhin et al.`).
+- [x] Full test suite with 25 passing Vitest tests (`npm.cmd test`).
+- [x] Production build passes cleanly with 0 warnings/errors (`npm.cmd run build`).
+- **Verification**: All 25 frontend tests pass, 182 backend tests pass, full end-to-end integration verified.
 
 ---
 
